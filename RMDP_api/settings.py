@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure--0i%4e9*vbbj&g+w&i-lfanunw_899j@k8c7d0@mq#p)qdbs5n
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['198.211.99.20', 'localhost', '127.0.0.1', '60.251.157.47', '0.0.0.0']
 
 # Application definition
 connect("exmaple-project", host="mongodb://admin:admin@60.251.157.47/RMDP")
