@@ -1,3 +1,5 @@
-django==2.2.8
+django~=3.2.5
 djongo==1.2.30
 djangorestframework==3.12.4
+mongoengine~=0.23.1
+docutils~=0.16

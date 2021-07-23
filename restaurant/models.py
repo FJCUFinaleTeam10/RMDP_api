@@ -1,10 +1,7 @@
-from django.db import models
+from mongoengine import *
 
 
 # Create your models here.
-class restaurant(models.Model):
-    longitude = models.CharField(max_length=100)
-    latitude = models.CharField(max_length=100)
-
-    class Meta:
-        db_table = "restaurant"
+class restaurant(Document):
+    longitude = StringField(max_length=100)
+    latitude = StringField(max_length=100)

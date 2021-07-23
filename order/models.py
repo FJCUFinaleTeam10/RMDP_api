@@ -1,21 +1,21 @@
-from django.db import models
-
-# Create your models here.
-from driver.models import driver
+from mongoengine import *
 from restaurant.models import restaurant
+from driver.models import driver
 
 
-class order(models.Model):
-    timeRequest = models.DateTimeField(null=True)
-    loadToDriver = models.BooleanField()
-    longitude = models.CharField(max_length=100)
-    latitude = models.CharField(max_length=100)
-    deadlineTime = models.DateTimeField()
-    restaurantId = models.ForeignKey(restaurant, on_delete=models.CASCADE)
-    arriveTime = models.DateTimeField()
-    driverId = models.ForeignKey(driver, on_delete=models.CASCADE)
+class order(Document):
+    timeRequest = DateTimeField(null=True)
+    loadToDriver = BooleanField()
+
+    longitude = StringField(max_length=100)
+    latitude = StringField(max_length=100)
+
+    deadlineTime = DateTimeField()
+    restaurantId = ReferenceField('restaurant')
+    arriveTime = DateTimeField()
+    driverId = ReferenceField('driver')
 
     class Meta:
-        db_table = "order"
+        db_table = 'order'
 
 # Create your models here.

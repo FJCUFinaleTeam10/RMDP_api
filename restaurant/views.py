@@ -1,12 +1,17 @@
-from django.shortcuts import render
+from django.http import HttpResponse, JsonResponse
+from rest_framework.decorators import api_view
 
-# Create your views here.
 from restaurant.models import restaurant
 from restaurant.serializers import RestaurantSerializer
-from rest_framework import viewsets
 
 
-# Create your views here.
-class RestaurantViewSet(viewsets.ModelViewSet):
-    queryset = restaurant.objects.all()
-    serializer_class = RestaurantSerializer
+@api_view(['GET', 'POST', 'DELETE'])
+def listAll(request):
+    if request.method == 'GET':
+        restaurantList = restaurant.objects.all()
+        result = RestaurantSerializer(restaurantList, many=True)
+        return JsonResponse(result.data, safe=False)
+    if request.method == 'POST':
+        pass
+    if request.method == 'DELETE':
+        pass

@@ -1,10 +1,8 @@
-from rest_framework import serializers
-from driver.models import driver
+from rest_framework_mongoengine.serializers import DocumentSerializer
+from .models import driver
 
 
-class DriverSerializer(serializers.ModelSerializer):
+class DriverSerializer(DocumentSerializer):
     class Meta:
         model = driver
-        # fields = '__all__'
-        fields = ('id', 'longitude', 'latitude',
-                  'velocity', 'capacity')
+        fields = '__all__'
