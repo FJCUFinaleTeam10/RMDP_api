@@ -10,7 +10,9 @@ def listAll(request):
     if request.method == 'GET':
         restaurantList = restaurant.objects.all()
         result = RestaurantSerializer(restaurantList, many=True)
-        return JsonResponse(result.data, safe=False)
+        response = JsonResponse(result.data, safe=False)
+        response["Access-Control-Allow-Origin"] = "*"
+        return response
     if request.method == 'POST':
         pass
     if request.method == 'DELETE':

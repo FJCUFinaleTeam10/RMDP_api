@@ -12,7 +12,9 @@ def listAll(request):
     if request.method == 'GET':
         orderList = order.objects.all()
         result = OrderSerializer(orderList, many=True)
-        return JsonResponse(result.data, safe=False)
+        response = JsonResponse(result.data, safe=False)
+        response["Access-Control-Allow-Origin"] = "*"
+        return response
     if request.method == 'POST':
         pass
     if request.method == 'DELETE':
