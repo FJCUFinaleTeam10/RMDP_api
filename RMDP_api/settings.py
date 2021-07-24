@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'restaurant',
     'driver'
 ]
+if DEBUG is True:
+    INSTALLED_APPS += ('corsheaders',)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
