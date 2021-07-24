@@ -12,7 +12,8 @@ def listAll(request):
     if request.method == 'GET':
         driverList = driver.objects.all()
         result = DriverSerializer(driverList, many=True)
-        return JsonResponse(result.data, safe=False)
+        response=JsonResponse(result.data, safe=False)
+        return response
     if request.method == 'POST':
         pass
     if request.method == 'DELETE':

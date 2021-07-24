@@ -11,7 +11,6 @@ def listAll(request):
         restaurantList = restaurant.objects.all()
         result = RestaurantSerializer(restaurantList, many=True)
         response = JsonResponse(result.data, safe=False)
-        response["Access-Control-Allow-Origin"] = "*"
         return response
     if request.method == 'POST':
         pass
