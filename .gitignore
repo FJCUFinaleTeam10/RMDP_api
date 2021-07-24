@@ -105,3 +105,4 @@ venv.bak/
 
 .env
 .ide
+__pycache__
