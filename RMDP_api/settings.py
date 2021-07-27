@@ -25,8 +25,6 @@ SECRET_KEY = 'django-insecure--0i%4e9*vbbj&g+w&i-lfanunw_899j@k8c7d0@mq#p)qdbs5n
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-CORS_ALLOW_ALL_ORIGINS = True
-ALLOWED_HOSTS = ['*']
 
 # Application definition
 connect("exmaple-project", host="mongodb://admin:admin@60.251.157.47/RMDP")
@@ -79,6 +77,23 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'RMDP_api.wsgi.application'
 
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://\w+\.example\.com$",
+]
+CORS_ALLOW_ALL_ORIGINS = True
+ALLOWED_HOSTS = ['*']
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
