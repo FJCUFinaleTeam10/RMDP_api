@@ -1,17 +1,12 @@
-from audioop import reverse
-
-from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
+from datetime import datetime, timedelta
 from datetime import datetime, timedelta
 
-from docutils.parsers import null
-from pymongo.response import Response
-from rest_framework import status
+from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from rest_framework.decorators import api_view
 
 from order.models import order
 from order.serializers import OrderSerializer
-from driver.models import driver
-from driver.serializers import DriverSerializer
+from .tasks import send_email
 
 
 # Create your views here.
@@ -27,31 +22,22 @@ def listAll(request):
 @api_view(['POST'])
 def createOrder(request):
     if request.method == 'POST':
+
         newOrder = order(timeRequest=datetime.strptime(request.data['requestTime'], "%d-%m-%Y %H:%M:%S"))
         newOrder.loadToDriver = False
+        newOrder.iscompleted = False
         newOrder.longitude = request.data['longitude']
         newOrder.latitude = request.data['latitude']
         newOrder.deadlineTime = newOrder.timeRequest + timedelta(minutes=40)
         newOrder.restaurantId = request.data['restaurantId']
-        newOrder.arriveTime = null
-        newOrder.driverId = null
-        newOrder.iscompleted = False
-        try:
-            newOrder.save()
-            return HttpResponseRedirect(reverse('polls:results'))
-        finally:
-            pass
-        return Response("done", status=status.HTTP_201_CREATED)
+        newOrder.arriveTime = None
+        newOrder.driverId = None
 
-# @api_view(['GET'])
-# def getOrder(request):
-#     if request.method == 'GET':
-#         newOrder = order(timeRequest=request.data)
-#         newOrder.loadToDriver = False
-#         newOrder.longitude = StringField(max_length=100)
-#         newOrder.latitude = StringField(max_length=100)
-#         newOrder.deadlineTime = DateTimeField()
-#         newOrder.restaurantId = ReferenceField('restaurant')
-#         newOrder.arriveTime = DateTimeField()
-#         newOrder.driverId = ReferenceField('driver')
-#         newOrder.save()
+        newOrder.driverId = None
+
+        try:
+            send_email.delay('danghoangnhan.1@gmail.com', 'daniel')
+            newOrder.save()
+            return HttpResponse('ok')
+        except ValueError:
+            return  HttpResponseBadRequest("Bad Request")
