@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'order',
     'restaurant',
     'driver',
-    'template'
+    'template',
+    'RMDP'
 ]
 
 try:

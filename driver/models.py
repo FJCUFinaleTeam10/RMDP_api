@@ -7,3 +7,4 @@ class driver(Document):
     latitude = StringField(max_length=100)
     velocity = FloatField()
     capacity = FloatField()
+    route = ListField()

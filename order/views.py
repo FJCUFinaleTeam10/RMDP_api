@@ -1,12 +1,11 @@
 from datetime import datetime, timedelta
-from datetime import datetime, timedelta
 
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from rest_framework.decorators import api_view
 
 from order.models import order
 from order.serializers import OrderSerializer
-from .tasks import send_email
+from .tasks import runRMDP
 
 
 # Create your views here.
@@ -23,21 +22,20 @@ def listAll(request):
 def createOrder(request):
     if request.method == 'POST':
 
-        newOrder = order(timeRequest=datetime.strptime(request.data['requestTime'], "%d-%m-%Y %H:%M:%S"))
-        newOrder.loadToDriver = False
-        newOrder.iscompleted = False
-        newOrder.longitude = request.data['longitude']
-        newOrder.latitude = request.data['latitude']
-        newOrder.deadlineTime = newOrder.timeRequest + timedelta(minutes=40)
-        newOrder.restaurantId = request.data['restaurantId']
-        newOrder.arriveTime = None
-        newOrder.driverId = None
+        # newOrder = order(timeRequest=datetime.strptime(request.data['requestTime'], "%d-%m-%Y %H:%M:%S"))
+        # newOrder.loadToDriver = False
+        # newOrder.iscompleted = False
+        # newOrder.longitude = request.data['longitude']
+        # newOrder.latitude = request.data['latitude']
+        # newOrder.deadlineTime = newOrder.timeRequest + timedelta(minutes=40)
+        # newOrder.restaurantId = request.data['restaurantId']
+        # newOrder.arriveTime = None
+        # newOrder.driverId = None
 
-        newOrder.driverId = None
-
+        request.data['orderId']=order.objects.count()+1
         try:
-            send_email.delay('danghoangnhan.1@gmail.com', 'daniel')
-            newOrder.save()
+            runRMDP.delay(request.data)
             return HttpResponse('ok')
         except ValueError:
-            return  HttpResponseBadRequest("Bad Request")
+            print(ValueError)
+            return HttpResponseBadRequest("Bad Request")
