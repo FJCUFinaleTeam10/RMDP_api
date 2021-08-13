@@ -34,18 +34,7 @@ def runRMDP(unAsignerOrder):
     capacity: int = 10
     velocity: int = 20
     restaurantRepareTime: int = 10 * 60
-    instance = RMDP(delay, maxLengthPost, maxTimePost, capacity, velocity, restaurantRepareTime)
+    deadlineTime :int = 40
+    instance = RMDP(delay, maxLengthPost, maxTimePost, capacity, velocity, restaurantRepareTime,deadlineTime)
     currentTime = now()
-    print("new order is comming")
-    # Input: State S, time t, route plan Θ, unassigned orders $o
-    # , buffer b, maximal number of postonements pmax,
-    # maximum time allowed for postponement tpmax)
-
-    # instance.runRMDP(s, currentTime, routePlan, UnassignedOrder,
-    #                  buffer, maxLengthPost, maxTimePost)
     instance.runRMDP([unAsignerOrder])
-    print("generated routing")
-    # every time new order coming we will call RMDP model
-    # to generate Decision and update the Driver location
-    # for next order coming
-    print("updated routing")

@@ -1,27 +1,33 @@
 import copy
 # from generatingData import generateTestData
 # from Math.Geometry import interSectionCircleAndLine
+from datetime import datetime, timedelta, date
+
+from DistUpgrade.QUrlOpener import singleton
 from django.forms.models import model_to_dict
 import itertools
 import math
 import json
-
 from driver.models import driver
 from order.models import order
 from restaurant.models import restaurant
 
 
+class Singleton(object):
+    _instance = None
+
+    def __new__(class_, *args, **kwargs):
+        if not isinstance(class_._instance, class_):
+            class_._instance = object.__new__(class_, *args, **kwargs)
+        return class_._instance
+
+
+@singleton
 class RMDP:
     _instance = None
 
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-        # singleton
-
     def __init__(self, delay: int, maxLengthPost: int, maxTimePost: int,
-                 capacity: int, velocity: int, restaurantPrepareTime: int):
+                 capacity: int, velocity: int, restaurantPrepareTime: int, deadlineTime):
 
         self.D_0 = []  # Order
         self.Order_num = 2
@@ -33,28 +39,34 @@ class RMDP:
         self.maxLengthPost = maxLengthPost
         self.maxTimePost = maxTimePost
         self.capacity = capacity
-        self.velocity = velocity
+        self.velocity: float = velocity * 0.2777777777777778
         self.restaurantPrepareTime = restaurantPrepareTime
+        self.deadlineTime = deadlineTime
+        self.Theta_x = []
+        self.P_x = []
 
     def runRMDP(self, unAssignOrder: list):
         try:
             self.restaurantlist = list(restaurant.objects.all())
             self.vehicleList = list(driver.objects.all())
 
-            P_x = []
             delay: float = float("inf")
             slack = 0
 
             unassignedOrderPermutation = list(itertools.permutations(unAssignOrder))
             for permutation in unassignedOrderPermutation:
                 Theta_hat = copy.deepcopy(self.vehicleList)  # Candidate route plan
-                P_hat = copy.deepcopy(P_x)
+                P_hat = memcacheDb.get('P_hat')
+
+                if P_hat is None:
+                    P_hat = []
 
                 for D in permutation:
 
                     currentPairdDriver = self.FindVehicle(D)
                     D["driverId"] = (str(currentPairdDriver.id))
-                    currentPairdRestaurentList = list(filter(lambda x: str(x.id) == D["restaurantId"], self.restaurantlist))
+                    currentPairdRestaurentList = list(
+                        filter(lambda x: str(x.id) == D["restaurantId"], self.restaurantlist))
                     currentPairdRestaurent = currentPairdRestaurentList[0].to_mongo().to_dict()
 
                     currentPairdRestaurent['orderId'] = str(D['orderId'])
@@ -82,35 +94,51 @@ class RMDP:
                                 PairdDriver = self.FindVehicle(pospondedOrder)
                                 PairdDriver.setCurrentCapacity(PairdDriver.getCurrentCapacity() + 1)
                                 pospondedOrder.setDriverId(PairdDriver.get_id())
-                                PairedRestaurent = copy.deepcopy(self.restaurantList[pospondedOrder.getRestaurantId() - 1])
+                                PairedRestaurent = copy.deepcopy(
+                                    self.restaurantList[pospondedOrder.getRestaurantId() - 1])
                                 PairedRestaurent.setOrderId(pospondedOrder.getId())
                                 self.AssignOrder(Theta_hat, pospondedOrder, PairdDriver, PairedRestaurent)
                             P_hat.clear()
                         P_hat.append(D)
-                S = self.TotalDelay()
-                if (S < delay) or ((S == delay) and (self.Slack() < slack)):
-                    slack = self.Slack()
+                S = self.TotalDelay(Theta_hat)
+                currentSlack = self.Slack(Theta_hat)
+                if (S < delay) or ((S == delay) and (currentSlack < slack)):
+                    slack = currentSlack
                     delay = S
                     self.Theta_x = copy.deepcopy(Theta_hat)
                     self.P_x = copy.deepcopy(P_hat)
             print(self.Theta_x)
+            print(self.P_x)
             self.Remove()
+            self.updateValue()
         except ValueError:
             print(ValueError)
 
-    def deltaSDelay(self, route: list):
-        delay: float = 0.0
-        tripTime: float = 0.0
-        for i in range(1, len(route['route']), 1):
-            previousNode = route['route'][i - 1]
-            currentNode = route['route'][i]
-            currentDistance = self.distance(previousNode.getLatitude(), previousNode.getLongitude(),
-                                            currentNode.getLatitude(), currentNode.getLongitude())
-            tripTime += currentDistance / self.velocity
-            if isinstance(currentNode, Ds):
-                delay += max(0, (tripTime + self.time_buffer) - (
-                        currentNode.getDeadLine() + currentNode.get_timeRequest()))
-        return delay
+    def deltaSDelay(self, driver):
+        try:
+            delay: float = 0.0
+            tripTime: float = 0.0
+            currentDriverLocation = {'longitude': driver['longitude'],
+                                     'latitude': driver['latitude']}
+            currentDriver = copy.deepcopy(driver)
+            currentDriver.route.insert(0, currentDriverLocation)
+            for i in range(1, len(currentDriver['route']), 1):
+                previousNode = currentDriver['route'][i - 1]
+                currentNode = currentDriver['route'][i]
+                currentDistance = self.distance(float(previousNode['latitude']), float(previousNode['longitude']),
+                                                float(currentNode['latitude']), float(currentNode['longitude']))
+                tripTime += currentDistance / self.velocity
+                if 'restaurantId' in currentNode:
+                    deadlineTime = self.deadlineTime
+                    timeComplete = timedelta(seconds=tripTime) + timedelta(
+                        minutes=self.time_buffer) + datetime.now() + timedelta(hours=8)
+                    timeDeadline = datetime.strptime(currentNode['requestTime'], "%d-%m-%Y %H:%M:%S") + timedelta(
+                        minutes=deadlineTime)
+                    timeDelay = timeDeadline - timeComplete
+                    delay = max(0, timeDelay.days + timeDelay.total_seconds())
+            return delay
+        except ValueError:
+            print(ValueError)
 
     def AssignOrder(self, Theta_hat, order, pairedDriver, currentParedRestaurent):
         currentDriver: list = next((driver for driver in Theta_hat if driver.id == pairedDriver.id), [])
@@ -125,10 +153,11 @@ class RMDP:
             minDelayTime = float('inf')
             for i in range(0, len(currentDriver.route), 1):  # control Restaurant
                 for j in range(i + 1, len(currentDriver.route) + 2, 1):  # find all the possible positioins of new order
-                    tempList = copy.deepcopy(currentDriver.route)
-                    tempList.insert(i, currentParedRestaurent)
-                    tempList.insert(j, order)
-                    delayTime = self.deltaSDelay(tempList)
+
+                    tmpDriver = copy.deepcopy(currentDriver)
+                    tmpDriver.route.insert(i, currentParedRestaurent)
+                    tmpDriver.route.insert(j, order)
+                    delayTime = self.deltaSDelay(tmpDriver)
 
                     if minDelayTime > delayTime:
                         minDelayTime = delayTime
@@ -138,11 +167,12 @@ class RMDP:
             currentDriver.route.insert(first, currentParedRestaurent)
             currentDriver.route.insert(second, order)
         return Theta_hat
+
     # main function
 
-    def Slack(self):
+    def Slack(self, Theta_hat):
         totalSlack: int = 0
-        for routePerVehicle in self.Theta_x:
+        for routePerVehicle in Theta_hat:
             totalSlack += self.slackDelay(routePerVehicle)
         return totalSlack
 
@@ -199,47 +229,50 @@ class RMDP:
                 minTimeTolTal = currenTripTime
         return minTimeDriver
 
-    def slackDelay(self, route):
-        delay: int = 0
-        tripTime: int = 0
-        currentDriver = self.vehiceList[route["driverId"] - 1]
-        currentRoute: list = copy.deepcopy(route['route'])
-        currentRoute.append(currentDriver)
-        for i in range(1, len(currentRoute), 1):
-            currentDistance = self.distance(currentRoute[i - 1].getLatitude(), currentRoute[i - 1].getLongitude(),
-                                            currentRoute[i].getLatitude(),
-                                            currentRoute[i].getLongitude())
-            tripTime += currentDistance / self.velocity
-            if isinstance(currentRoute[i], Ds):
-                delay += max(0, currentRoute[i].getDeadLine() -
-                             tripTime - self.time_buffer)
-        return delay
+    def slackDelay(self, driver):
+        try:
+            delay: int = 0
+            tripTime: int = 0
+            currentRoute: list = copy.deepcopy(driver['route'])
+            currentRoute.append(driver)
+            for i in range(1, len(currentRoute), 1):
+                currentDistance = self.distance(float(currentRoute[i - 1]['latitude']),
+                                                float(currentRoute[i - 1]['longitude']),
+                                                float(currentRoute[i]['latitude']), float(currentRoute[i]['longitude']))
+                tripTime += currentDistance / self.velocity
+                if 'restaurantId' in currentRoute[i]:
+                    deadLine = datetime.strptime(currentRoute[i]['deadLineTime'],
+                                                 "%d-%m-%Y %H:%M:%S") - datetime.now() + timedelta(hours=8)
+                    delay = timedelta(seconds=tripTime) - timedelta(seconds=self.time_buffer) - deadLine
+                    delay = max(0, delay.total_seconds())
+            return delay
+        except ValueError:
+            print(ValueError)
 
-    def TotalDelay(self):
+    def TotalDelay(self, theta_Hat: list):
         totalSlack: int = 0
-        for routePerVehicle in self.Theta_x:
+        for routePerVehicle in theta_Hat:
             totalSlack += self.deltaSDelay(routePerVehicle)
         return totalSlack
 
     def Remove(self):
         for pospondedOrder in self.P_x:
-            currentPairedDriver = self.vehiceList[pospondedOrder.getDriverId() - 1]
+            currentPairedDriverList = list(filter(lambda x: str(x.id) == str(pospondedOrder['driverId']), self.Theta_x))
+            currentPairedDriver = currentPairedDriverList[0]
             targetRoute: list = next(
-                (route for route in self.Theta_x if route.get("driverId") == currentPairedDriver.get_id()), [])
-            ans = [node for node in targetRoute['route'] if
-                   ((isinstance(node, Ds) and node.getId() != pospondedOrder.getId()) or
-                    (isinstance(node, restaurant) and node.getOrderId() != pospondedOrder.getId()))]
+                (driver for driver in self.Theta_x if str(driver.id) == str(currentPairedDriver.id)), [])
+
+            ans = list(filter(lambda x: (('restaurantId' in x) and
+                                         str(x['orderId']) != str(pospondedOrder['orderId'])) or (
+                                                ('requestTime' not in x) and ('route' not in x) and str(x['orderId']) !=
+                                                str(pospondedOrder['orderId'])), targetRoute['route']))
             targetRoute['route'] = copy.deepcopy(ans[:])
 
     def Postponement(self, P_hat, D, p_max, t_Pmax):
-        # P_hat,D, p_max, t_Pmax have the description
-        # if Theta_hat != D:  # I don't know how to get current route plan
         if len(P_hat) == 0:  # if postponement set is empty
             return True
         elif len(P_hat) < self.maxLengthPost:  # if number of postponement <= max of postponement
-            # The time difference with the first order of P_hat and check whether <= max
             if D.t - P_hat[0].t < t_Pmax:
-                # of poatponement time
                 return True
             else:
                 return False
@@ -251,3 +284,17 @@ class RMDP:
         a = 0.5 - math.cos((lat2 - lat1) * p) / 2 + math.cos(lat1 * p) * math.cos(lat2 * p) * (
                 1 - math.cos((lon2 - lon1) * p)) / 2
         return 12742 * math.asin(math.sqrt(a))  # 2*R*asin...
+
+    def updateValue(self):
+        try:
+            updateDriver = list(filter(lambda x: len(x['route']) > 0, self.Theta_x))
+            for pairdDriver in updateDriver:
+                currentObject = pairdDriver.to_mongo().to_dict()
+                driver.objects(id=pairdDriver.id).update(
+                    capacity=currentObject['capacity'],
+                    route=currentObject['route'],
+                    velocity=currentObject['velocity']
+                )
+            memcacheDb.hmset('P_hat', self.P_x)
+        except ValueError:
+            print((ValueError))

@@ -41,4 +41,6 @@ webdriver-manager==2.2.0
 zipp==0.6.0
 django-cors-headers
 django-rest-framework-mongoengine
-djangorestframework
+djangorestframework~=3.12.4
+mongoengine~=0.23.1
+rejson~=0.5.4

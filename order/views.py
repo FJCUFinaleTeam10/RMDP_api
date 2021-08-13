@@ -22,7 +22,9 @@ def listAll(request):
 def createOrder(request):
     if request.method == 'POST':
 
-        # newOrder = order(timeRequest=datetime.strptime(request.data['requestTime'], "%d-%m-%Y %H:%M:%S"))
+        timeRequest = datetime.strptime(request.data['requestTime'], "%d-%m-%Y %H:%M:%S")
+        timeDeadline = timeRequest +timedelta(minutes=40)
+        newOrder = order(timeRequest=datetime.strptime(request.data['requestTime'], "%d-%m-%Y %H:%M:%S"))
         # newOrder.loadToDriver = False
         # newOrder.iscompleted = False
         # newOrder.longitude = request.data['longitude']
@@ -33,6 +35,7 @@ def createOrder(request):
         # newOrder.driverId = None
 
         request.data['orderId']=order.objects.count()+1
+        request.data['deadLineTime']= timeDeadline.strftime("%d-%m-%Y %H:%M:%S")
         try:
             runRMDP.delay(request.data)
             return HttpResponse('ok')
