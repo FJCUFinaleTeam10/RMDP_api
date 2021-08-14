@@ -3,6 +3,8 @@ from rest_framework.decorators import api_view
 
 from restaurant.models import restaurant
 from restaurant.serializers import RestaurantSerializer
+from restaurants.models import resteraurants
+from restaurants.serializer import RestaurantsSerializer
 
 
 @api_view(['GET', 'POST', 'DELETE'])
@@ -16,3 +18,13 @@ def listAll(request):
         pass
     if request.method == 'DELETE':
         pass
+
+
+@api_view(['GET'])
+def getRestaurantList(request):
+    offset = int(request.data['skip'])
+    items_per_page = int(request.data['limit'])
+    restaurantList = resteraurants.objects.skip(offset).limit(items_per_page)
+    result = RestaurantsSerializer(restaurantList, required=False, allow_null=True)
+    response = JsonResponse(result.data, safe=False)
+    return response

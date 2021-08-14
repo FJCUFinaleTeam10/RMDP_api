@@ -1,7 +1,7 @@
 from django.urls import include, path
-from .views import listAll
+from .views import *
 
 urlpatterns = [
-
-    path('', listAll, name='index')
+    path('', listAll, name='index'),
+    path('getRestaurantList/', getRestaurantList, name='index')
 ]

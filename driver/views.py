@@ -2,19 +2,23 @@
 from django.http import HttpResponse, JsonResponse
 from rest_framework.decorators import api_view
 
-from .models import driver
-from .serializers import DriverSerializer
-
+from .models import driver, Generate_Driver
+from .serializers import DriverSerializer, GenerateDriverSerializer
 
 # Create your views here.
-@api_view(['GET', 'POST', 'DELETE'])
+@api_view(['GET'])
 def listAll(request):
     if request.method == 'GET':
         driverList = driver.objects.all()
         result = DriverSerializer(driverList, many=True)
-        response=JsonResponse(result.data, safe=False)
+        response = JsonResponse(result.data, safe=False)
         return response
-    if request.method == 'POST':
-        pass
-    if request.method == 'DELETE':
-        pass
+
+
+# Create your views here.
+@api_view(['GET'])
+def listAllGenerateDriver(request):
+    driverList = Generate_Driver.objects.all()
+    result =  GenerateDriverSerializer(driverList, many=True)
+    response = JsonResponse(result.data, safe=False)
+    return response

@@ -3,7 +3,6 @@ import copy
 # from Math.Geometry import interSectionCircleAndLine
 from datetime import datetime, timedelta, date
 
-from DistUpgrade.QUrlOpener import singleton
 from django.forms.models import model_to_dict
 import itertools
 import math
@@ -22,7 +21,6 @@ class Singleton(object):
         return class_._instance
 
 
-@singleton
 class RMDP:
     _instance = None
 

@@ -8,4 +8,3 @@ class RestaurantSerializer(DocumentSerializer):
     class Meta:
         model = restaurant
         fields = '__all__'
-        # fields = ('id', 'longitude', 'latitude')
