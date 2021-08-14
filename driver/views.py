@@ -2,7 +2,7 @@
 from django.http import HttpResponse, JsonResponse
 from rest_framework.decorators import api_view
 
-from .models import driver, Generate_Driver
+from .models import driver, testdriver
 from .serializers import DriverSerializer, GenerateDriverSerializer
 
 # Create your views here.
@@ -18,7 +18,7 @@ def listAll(request):
 # Create your views here.
 @api_view(['GET'])
 def listAllGenerateDriver(request):
-    driverList = Generate_Driver.objects.all()
+    driverList = testdriver.objects.all()
     result =  GenerateDriverSerializer(driverList, many=True)
     response = JsonResponse(result.data, safe=False)
     return response
