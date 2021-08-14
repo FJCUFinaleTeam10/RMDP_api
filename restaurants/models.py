@@ -8,7 +8,7 @@ class test_restaurant(Document):
     City = StringField(null=True, blank=True)
     Country_Code = IntField(null=True, blank=True)
     Average_Cost_for_two = IntField( null=True, blank=True)
-
+    Locality = StringField()
     Cuisines = StringField(null=True, blank=True)
     Currency = StringField( null=True, blank=True)
     Has_Online_delivery = StringField(null=True, blank=True)
@@ -23,3 +23,4 @@ class test_restaurant(Document):
     Restaurant_ID = IntField(null=True, blank=True)
     Switch_to_order_menu = StringField(null=True, blank=True)
     Votes = IntField(null=True, blank=True)
+    Locality_Verbose = StringField()

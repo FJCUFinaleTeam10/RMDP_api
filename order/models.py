@@ -4,15 +4,9 @@ from driver.models import driver
 
 
 class order(Document):
-    timeRequest = DateTimeField(null=False)
-    loadToDriver = BooleanField()
-    iscompleted = BooleanField()
-    longitude = StringField(max_length=100)
-    latitude = StringField(max_length=100)
-
-    deadlineTime = DateTimeField()
-    restaurantId = StringField(max_length=100)
-    arriveTime = DateTimeField(null=True)
-    driverId = StringField(max_length=100, null=True)
-
+    order_approved_at = StringField()
+    order_delivered_customer_date = StringField()
+    order_estimated_delivery_date = StringField()
+    order_restaurant_carrier_date = StringField()
+    order_status = StringField()
 # Create your models here.

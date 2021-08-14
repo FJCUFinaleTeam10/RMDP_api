@@ -9,19 +9,20 @@ from .tasks import runRMDP
 
 
 # Create your views here.
-@api_view(['GET', 'POST', 'DELETE'])
+@api_view(['GET'])
 def listAll(request):
-    if request.method == 'GET':
-        result = OrderSerializer(order.objects.all(), many=True)
-        response = JsonResponse(result.data, safe=False)
-        response["Access-Control-Allow-Origin"] = "*"
-        return response
+    offset = int(request.data['skip'])
+    items_per_page = int(request.data['limit'])
+    orderList = order.objects.skip(offset).limit(items_per_page)
+    result = OrderSerializer(orderList, many=True)
+    response = JsonResponse(result.data, safe=False)
+    response["Access-Control-Allow-Origin"] = "*"
+    return response
 
 
 @api_view(['POST'])
 def createOrder(request):
     if request.method == 'POST':
-
         timeRequest = datetime.strptime(request.data['requestTime'], "%d-%m-%Y %H:%M:%S")
         timeDeadline = timeRequest +timedelta(minutes=40)
         newOrder = order(timeRequest=datetime.strptime(request.data['requestTime'], "%d-%m-%Y %H:%M:%S"))
