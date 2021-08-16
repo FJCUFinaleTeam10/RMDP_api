@@ -8,3 +8,10 @@ class RestaurantSerializer(DocumentSerializer):
     class Meta:
         model = restaurant
         fields = '__all__'
+
+
+class RestaurantListSerializer(DocumentSerializer):
+    class Meta:
+        model = restaurant
+        fields = '__all__'
+
