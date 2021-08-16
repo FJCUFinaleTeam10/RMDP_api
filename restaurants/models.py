@@ -24,3 +24,4 @@ class test_restaurant(Document):
     Switch_to_order_menu = StringField(null=True, blank=True)
     Votes = IntField(null=True, blank=True)
     Locality_Verbose = StringField()
+    Restaurant_Name = StringField()
