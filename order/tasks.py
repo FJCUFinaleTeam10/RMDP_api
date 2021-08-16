@@ -7,24 +7,6 @@ from django.utils.timezone import now
 
 from RMDP.RMDP import RMDP
 from celery.contrib import  rdb
-
-@task
-def send_email(recipient_email, recipient_name):
-    try:
-        subject = 'Test sending email'
-        message = 'hello {}'.format(recipient_name)
-        mail_sent = send_mail(
-            subject,
-            message,
-            settings.EMAIL_HOST_USER,  # 寄件人的信箱
-            [recipient_email]  # 收件人的信箱
-        )
-        print(mail_sent)
-        return mail_sent
-    except ValueError:
-        print(ValueError)
-
-
 @task
 def runRMDP(unAsignerOrder):
     print(unAsignerOrder)

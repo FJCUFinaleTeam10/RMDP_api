@@ -14,8 +14,7 @@ from pathlib import Path
 import os
 from mongoengine import connect
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-from . import settings_local
+# Build paths inside the project like this: BASE_DIR / 'subdir'
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -44,17 +43,8 @@ INSTALLED_APPS = [
     'order',
     'restaurant',
     'driver',
-    'template',
     'RMDP'
 ]
-
-try:
-    from .settings_local import *
-
-    email = settings_local.EMAIL_HOST_USER
-    print('import EMAIL_HOST_USER from settings_local:', email)
-except:
-    pass
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -132,13 +122,6 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Taipei'
 
-
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_USE_TLS = True
-EMAIL_PORT = 587
-EMAIL_HOST_USER = 'danghoangnhan.1@gmail.com'
-EMAIL_HOST_PASSWORD = 'huynhnhu10082017'
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'

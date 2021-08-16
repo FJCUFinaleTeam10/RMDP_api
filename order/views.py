@@ -26,15 +26,12 @@ def createOrder(request):
         timeRequest = datetime.strptime(request.data['requestTime'], "%d-%m-%Y %H:%M:%S")
         timeDeadline = timeRequest +timedelta(minutes=40)
         newOrder = order(timeRequest=datetime.strptime(request.data['requestTime'], "%d-%m-%Y %H:%M:%S"))
-        # newOrder.loadToDriver = False
-        # newOrder.iscompleted = False
-        # newOrder.longitude = request.data['longitude']
-        # newOrder.latitude = request.data['latitude']
-        # newOrder.deadlineTime = newOrder.timeRequest + timedelta(minutes=40)
-        # newOrder.restaurantId = request.data['restaurantId']
-        # newOrder.arriveTime = None
-        # newOrder.driverId = None
-
+        newOrder.longitude = request.data['longitude']
+        newOrder.latitude = request.data['latitude']
+        newOrder.deadlineTime = newOrder.timeRequest + timedelta(minutes=40)
+        newOrder.restaurantId = request.data['restaurantId']
+        newOrder.arriveTime = None
+        newOrder.driverId = None
         request.data['orderId']=order.objects.count()+1
         request.data['deadLineTime']= timeDeadline.strftime("%d-%m-%Y %H:%M:%S")
         try:

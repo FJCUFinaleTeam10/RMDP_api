@@ -54,7 +54,7 @@ class RMDP:
             unassignedOrderPermutation = list(itertools.permutations(unAssignOrder))
             for permutation in unassignedOrderPermutation:
                 Theta_hat = copy.deepcopy(self.vehicleList)  # Candidate route plan
-                P_hat = memcacheDb.get('P_hat')
+                P_hat = driver.objects.filter(order_status='watting')
 
                 if P_hat is None:
                     P_hat = []
@@ -293,6 +293,25 @@ class RMDP:
                     route=currentObject['route'],
                     velocity=currentObject['velocity']
                 )
-            memcacheDb.hmset('P_hat', self.P_x)
         except ValueError:
             print((ValueError))
+
+    def updatePosponedOrder(self):
+        for postpoendOrder in self.P_x:
+            try:
+                currentObject = postpoendOrder.to_mongo().to_dict()
+                driver.objects(id=postpoendOrder.id).update(
+                    order_status='watting'
+                )
+            except ValueError:
+                print((ValueError))
+
+    def updatePairdOrder(self):
+        for pairedOrder in self.Theta_x:
+            try:
+                currentObject = pairedOrder.to_mongo().to_dict()
+                driver.objects(id=currentObject.id).update(
+                    order_status='processing'
+                )
+            except ValueError:
+                print((ValueError))
