@@ -20,10 +20,10 @@ def listAll(request):
         pass
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 def getRestaurantList(request):
-    offset = int(request.data['skip'])
-    items_per_page = int(request.data['limit'])
+    offset = int(request.data['params']['skip'])
+    items_per_page = int(request.data['params']['limit'])
     restaurantList = test_restaurant.objects.skip(offset).limit(items_per_page)
     result = RestaurantsSerializer(restaurantList, many=True)
     response = JsonResponse(result.data, safe=False)
