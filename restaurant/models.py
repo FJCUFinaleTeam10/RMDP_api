@@ -25,3 +25,4 @@ class restaurant(Document):
     Votes = IntField(null=True, blank=True)
     Locality_Verbose = StringField()
     Restaurant_Name = StringField()
+

@@ -43,7 +43,9 @@ INSTALLED_APPS = [
     'order',
     'restaurant',
     'driver',
-    'RMDP'
+    'RMDP',
+    'menu',
+    'geolocation'
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

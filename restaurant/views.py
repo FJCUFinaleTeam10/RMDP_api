@@ -1,10 +1,8 @@
 from django.http import HttpResponse, JsonResponse
 from rest_framework.decorators import api_view
 
-
 from restaurant.serializers import RestaurantSerializer, RestaurantListSerializer
 from restaurant.models import restaurant
-
 
 
 @api_view(['GET', 'POST', 'DELETE'])
@@ -28,3 +26,5 @@ def getRestaurantList(request):
     result = RestaurantListSerializer(restaurantList, many=True)
     response = JsonResponse(result.data, safe=False)
     return response
+
+
