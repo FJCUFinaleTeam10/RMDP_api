@@ -1,8 +1,13 @@
+FROM python:3.6-alpine
 
-FROM python:3
+ENV CELERY_BROKER_URL redis://redis:6379/0
+ENV CELERY_RESULT_BACKEND redis://redis:6379/0
+ENV C_FORCE_ROOT true
 
-ENV PYTHONUNBUFFERED 1
-RUN mkdir /django_mongodb_docker
-WORKDIR /django_mongodb_docker
-COPY . /django_mongodb_docker/
+#COPY . /queue
+#WORKDIR /queue
+
 RUN pip install -r requirements.txt
+
+# production
+ENTRYPOINT celery -A RMDP_api worker --loglevel=info

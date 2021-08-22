@@ -106,3 +106,4 @@ venv.bak/
 .env
 .ide
 __pycache__
+data-db
