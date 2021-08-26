@@ -1,6 +1,6 @@
 from rest_framework_mongoengine.serializers import DocumentSerializer
 
-from restaurant.models import restaurant
+from restaurant.models import restaurant,test_restaurant
 
 
 class RestaurantSerializer(DocumentSerializer):
@@ -8,10 +8,7 @@ class RestaurantSerializer(DocumentSerializer):
         model = restaurant
         fields = '__all__'
 
-
-class RestaurantListSerializer(DocumentSerializer):
+class testRestaurantsSerializer(DocumentSerializer):
     class Meta:
-        model = restaurant
+        model = test_restaurant
         fields = '__all__'
-
-

@@ -1,8 +1,9 @@
 from django.http import HttpResponse, JsonResponse
 from rest_framework.decorators import api_view
 
-from restaurant.serializers import RestaurantSerializer, RestaurantListSerializer
-from restaurant.models import restaurant
+from restaurant.models import restaurant,test_restaurant
+from restaurant.serializers import RestaurantSerializer,testRestaurantsSerializer
+
 
 
 @api_view(['GET', 'POST', 'DELETE'])
@@ -16,9 +17,8 @@ def listAll(request):
         pass
     if request.method == 'DELETE':
         pass
-
-
-@api_view(['POST'])
+'''
+@api_view(['GET'])
 def getRestaurantList(request):
     offset = int(request.data['params']['skip'])
     items_per_page = int(request.data['params']['limit'])
@@ -26,5 +26,11 @@ def getRestaurantList(request):
     result = RestaurantListSerializer(restaurantList, many=True)
     response = JsonResponse(result.data, safe=False)
     return response
-
-
+'''
+@api_view(['GET'])
+def getTestRestaurant(request):
+    if request.method == 'GET':
+        testrestaurantList = test_restaurant.objects.all()
+        result = testRestaurantsSerializer(testrestaurantList, many=True)
+        response = JsonResponse(result.data, safe=False)
+        return response
