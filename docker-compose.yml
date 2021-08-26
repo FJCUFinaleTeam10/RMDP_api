@@ -1,79 +1,45 @@
 version: "3.7"
-
-volumes:
-  init-db:
-  data-db:
 services:
-  redis:
-    image: redis
-  worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    depends_on:
-      - redis
-  monitor:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "5555:5555"
-    entrypoint: flower
-    command: -A RMDP_api --port=5555 --broker=redis://redis:6379/0
-    depends_on:
-      - redis
-#    volumes: [ './celery-queue:/queue' ]
   mongodb:
-    container_name: mongodb
-    image: mongo
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_DATABASE=auth
-      - MONGO_INITDB_ROOT_PASSWORD=pass
-    ports:
-      - '27017:27017'
-  mongo_seed:
-    image: mongo:3.2.6
-    links:
-      - mongodb
-    volumes:
-      - ./mongo-seed:/mongo-seed
-    command:
-      /mongo-seed/import.sh
+        image: mongo:latest
+        container_name: mongo-server
+        environment:
+                 # provide your credentials here
+                 - MONGO_INITDB_ROOT_USERNAME=mongoadmin
+                 - MONGO_INITDB_ROOT_PASSWORD=mypass
+        ports:
+           - "27017:27017"
+        volumes:
+           # to make a persistent database surviving docker restarts
+           - mongodb-volume:/data/db
+           # mongodump'ed data goes here
+           - ./mongo-seed-data:/data/mongo-seed-data
+           # script to start the actual import (besides other custom things
+           # you may want to do
+           - ./mongodb-scripts:/docker-entrypoint-initdb.d
+        networks:
+          - mongo-compose-network
+
   mongo-express:
     container_name: mongo-express
     image: mongo-express
     links:
-      - mongodb
-    depends_on:
-      - mongodb
+        - mongodb
     environment:
-      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
-      - ME_CONFIG_MONGODB_ADMINPASSWORD=pass
-      - ME_CONFIG_MONGODB_SERVER=mongodb
-      - ME_CONFIG_BASICAUTH_USERNAME=admin
-      - ME_CONFIG_BASICAUTH_PASSWORD=ihavealongpassword
-      - ME_CONFIG_MONGODB_URL=mongodb://mongodb:27017
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_BASICAUTH_USERNAME: mongoadmin
+      ME_CONFIG_BASICAUTH_PASSWORD: mypass
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_MONGODB_ADMINUSERNAME: mongoadmin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: mypass
     ports:
       - '8081:8081'
-#  celery:
-#    build: .
-#    command: celery -A RMDP_api worker -l INFO
-#    environment:
-#      - DEBUG=1
-#      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
-#      - CELERY_BROKER=redis://redis:6379/0
-#      - CELERY_BACKEND=redis://redis:6379/0
-  django:
-        build: .
-        container_name: django
-        command: python manage.py runserver 0.0.0.0:8000
-        volumes:
-            - .:/usr/src/app/
-        ports:
-            - "8000:8000"
-        environment:
-            - DEBUG=1
-            - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
-            - CELERY_BROKER=redis://redis:6379/0
-            - CELERY_BACKEND=redis://redis:6379/0
+    networks:
+      - mongo-compose-network
+    depends_on:
+      - mongodb
+networks:
+    mongo-compose-network:
+      driver: bridge
+volumes:
+        mongodb-volume:
