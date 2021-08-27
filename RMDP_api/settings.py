@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure--0i%4e9*vbbj&g+w&i-lfanunw_899j@k8c7d0@mq#p)qdbs5n
 DEBUG = True
 
 # Application definition
-connect("exmaple-project", host="mongodb://test:test@140.136.151.94/RMDP")
+connect("example-project", host="mongodb://admin:admin@localhost:27017/RMDP?authSource=admin")
 
 INSTALLED_APPS = [
     'django.contrib.admin',

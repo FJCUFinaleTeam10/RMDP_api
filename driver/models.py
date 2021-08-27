@@ -3,13 +3,11 @@ from mongoengine import *
 
 # Create your models here.
 class driver(Document):
-
-
-class test_driver(Document):
+    Capacity = IntField()
     City = StringField()
     Country_Code = IntField()
     Latitude = FloatField()
     Longitude = FloatField()
-    Velocity = IntField()
-    Capacity = IntField()
     Route = ListField()
+    Velocity = IntField()
+
