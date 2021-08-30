@@ -19,7 +19,6 @@ services:
            - ./mongodb-scripts:/docker-entrypoint-initdb.d
         networks:
           - mongo-compose-network
-
   mongo-express:
     container_name: mongo-express
     image: mongo-express
@@ -38,6 +37,27 @@ services:
       - mongo-compose-network
     depends_on:
       - mongodb
+
+  worker:
+    build:
+      context: ./celery-queue
+      dockerfile: Dockerfile
+    depends_on:
+      - redis
+    volumes: ['./celery-queue:/queue']
+  monitor:
+      build:
+        context: ./celery-queue
+        dockerfile: Dockerfile
+      ports:
+        - "5555:5555"
+      entrypoint: flower
+      command: -A tasks --port=5555 --broker=redis://redis:6379/0
+      depends_on:
+        - redis
+      volumes: [ './celery-queue:/queue' ]
+  redis:
+    image: redis
 networks:
     mongo-compose-network:
       driver: bridge

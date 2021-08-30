@@ -2,7 +2,8 @@ from django.urls import path
 from .views import *
 
 urlpatterns = [
-    path('getCities/', getCities),
-    path('getAllCities/', getAllCities),
-    path('',)
+    path('getCity/', getCities),
+    path('getallcountrycode/', getAllCountryCode),
+    path('getCountryCode/', getCountryCode),
+    path('getallcities/', getAllCities)
 ]

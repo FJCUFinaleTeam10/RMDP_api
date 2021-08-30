@@ -3,10 +3,6 @@ from mongoengine import *
 
 # Create your models here.
 class restaurant(Document):
-    longitude = StringField(max_length=100)
-    latitude = StringField(max_length=100)
-
-class test_restaurant(Document):
     Restaurant_ID = IntField(null=True, blank=True)
     Country_Code = IntField(null=True, blank=True)
     City = StringField(null=True, blank=True)

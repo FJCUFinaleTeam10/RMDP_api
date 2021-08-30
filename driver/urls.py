@@ -1,5 +1,7 @@
 from django.urls import path
-from .views import listAll
+from .views import *
+
 urlpatterns = [
-    path('', listAll),
+    path('getalldriver/', listAll),
+    path('getdriverbaseoncity/', getDriverBaseOnCity),
 ]

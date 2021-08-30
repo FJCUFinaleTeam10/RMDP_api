@@ -1,36 +1,30 @@
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from rest_framework.decorators import api_view
 
-from restaurant.models import restaurant,test_restaurant
-from restaurant.serializers import RestaurantSerializer,testRestaurantsSerializer
+from restaurant.models import restaurant
+from restaurant.serializers import RestaurantSerializer
 
 
-
-@api_view(['GET', 'POST', 'DELETE'])
-def listAll(request):
-    if request.method == 'GET':
-        restaurantList = restaurant.objects.all()
-        result = RestaurantSerializer(restaurantList, many=True)
-        response = JsonResponse(result.data, safe=False)
-        return response
-    if request.method == 'POST':
-        pass
-    if request.method == 'DELETE':
-        pass
-'''
-@api_view(['GET'])
-def getRestaurantList(request):
-    offset = int(request.data['params']['skip'])
-    items_per_page = int(request.data['params']['limit'])
-    restaurantList = restaurant.objects.skip(offset).limit(items_per_page)
-    result = RestaurantListSerializer(restaurantList, many=True)
+@api_view(['POST'])
+def listAllRestaurantList(request):
+    restaurantList = restaurant.objects.all()
+    result = RestaurantSerializer(restaurantList, many=True)
     response = JsonResponse(result.data, safe=False)
+    response["Access-Control-Allow-Origin"] = "*"
+    response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+    response["Access-Control-Max-Age"] = "1000"
+    response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
     return response
-'''
-@api_view(['GET'])
-def getTestRestaurant(request):
-    if request.method == 'GET':
-        testrestaurantList = test_restaurant.objects.all()
-        result = testRestaurantsSerializer(testrestaurantList, many=True)
-        response = JsonResponse(result.data, safe=False)
-        return response
+
+
+@api_view(['POST'])
+def getRestaurantBaseOnCity(request):
+    cityName = request.data['params']['city']
+    restaurantList = restaurant.objects(City=cityName)
+    result = RestaurantSerializer(restaurantList, many=True)
+    response = JsonResponse(result.data, safe=False)
+    response["Access-Control-Allow-Origin"] = "*"
+    response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+    response["Access-Control-Max-Age"] = "1000"
+    response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+    return response
