@@ -22,4 +22,5 @@ class restaurant(Document):
     Rating_color = StringField(null=True, blank=True)
     Rating_text = StringField(null=True, blank=True)
     Votes = IntField(null=True, blank=True)
+    Restaurant_Name = StringField()
     meta = { 'strict': False}
