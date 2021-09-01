@@ -31,8 +31,8 @@ def getRestaurantBaseOnCity(request):
 
 @api_view(['POST'])
 def getRestaurantBaseOnId(request):
-    restId = request.data['params']['restId']
-    restaurantList = restaurant.objects(restaurant_Id=cityName)
+    restId = int(request.data['params']['restId'])
+    restaurantList = restaurant.objects(Restaurant_ID=restId)
     result = RestaurantSerializer(restaurantList, many=True)
     response = JsonResponse(result.data, safe=False)
     response["Access-Control-Allow-Origin"] = "*"
