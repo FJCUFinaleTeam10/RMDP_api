@@ -6,5 +6,7 @@ class menu(Document):
     price = FloatField()
     rate = IntField()
     img = StringField(null=True, blank=True)
-    sections = StringField()
+    section = StringField()
     name = StringField()
+    menu = ListField()
+    restaurant_id = IntField()

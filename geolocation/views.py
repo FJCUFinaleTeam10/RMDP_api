@@ -35,9 +35,8 @@ def getCountryCode(request):
 # Create your views here.
 @api_view(['POST'])
 def getCities(request):
-    offset = int(request.data['params']['skip'])
-    items_per_page = int(request.data['params']['limit'])
-    cityList = all_cities.objects.skip(offset).limit(items_per_page)
+    country_code =    request.data['params']['countrycode']
+    cityList = all_cities.objects(Country_Code=country_code)
     result = CitySerializer(cityList, many=True)
     response = JsonResponse(result.data, safe=False)
     response["Access-Control-Allow-Origin"] = "*"

@@ -13,3 +13,12 @@ def getMenu(request):
     result = MenuSerializer(menuList, many=True)
     response = JsonResponse(result.data, safe=False)
     return response
+
+
+@api_view(['POST'])
+def getMenuBaseOnRestaurant(request):
+    rest_id = request.data['restId']
+    menuList = menu.objects(restaurant_id=rest_id)
+    result = MenuSerializer(menuList, many=True)
+    response = JsonResponse(result.data, safe=False)
+    return response
