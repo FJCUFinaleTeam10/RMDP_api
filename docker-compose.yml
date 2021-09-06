@@ -1,5 +1,34 @@
 version: "3.7"
 services:
+  web:
+    restart: always
+    build: ./web
+    expose:
+      - "8000"
+    links:
+      - mongodb:mongodb
+      - redis:redis
+    volumes:
+      - web-django:/usr/src/app
+      - web-static:/usr/src/app/static
+    networks:
+      - rmdp_api
+    env_file: .env
+    command: /usr/local/bin/gunicorn RMDP_api.wsgi:application -w 2 -b :8000
+    ports:
+      - "8000:8000"
+
+  nginx:
+    restart: always
+    build: ./nginx/
+    ports:
+      - "81:81"
+    volumes:
+      - web-static:/www/static
+    links:
+      - web:web
+    networks:
+      - rmdp_api
   mongodb:
         image: mongo:latest
         container_name: mongo-server
@@ -18,7 +47,7 @@ services:
            # you may want to do
            - ./mongodb-scripts:/docker-entrypoint-initdb.d
         networks:
-          - mongo-compose-network
+          - rmdp_api
   mongo-express:
     container_name: mongo-express
     image: mongo-express
@@ -34,7 +63,7 @@ services:
     ports:
       - '8081:8081'
     networks:
-      - mongo-compose-network
+      - rmdp_api
     depends_on:
       - mongodb
 
@@ -56,10 +85,22 @@ services:
       depends_on:
         - redis
       volumes: [ './celery-queue:/queue' ]
+      networks:
+        - rmdp_api
   redis:
-    image: redis
+    restart: always
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - rmdp_api
 networks:
-    mongo-compose-network:
+    rmdp_api:
       driver: bridge
 volumes:
         mongodb-volume:
+        web-django:
+        web-static:
+        redisdata:
