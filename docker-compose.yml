@@ -17,18 +17,6 @@ services:
     command: /usr/local/bin/gunicorn RMDP_api.wsgi:application -w 2 -b :8000
     ports:
       - "8000:8000"
-
-  nginx:
-    restart: always
-    build: ./nginx/
-    ports:
-      - "81:81"
-    volumes:
-      - web-static:/www/static
-    links:
-      - web:web
-    networks:
-      - rmdp_api
   mongodb:
         image: mongo:latest
         container_name: mongo-server
