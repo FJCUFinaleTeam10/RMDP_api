@@ -27,11 +27,11 @@ INSTALLED_APPS = [
     'rest_framework_mongoengine',
     'corsheaders',
     #apps
-    'RMDP_api.apps.order',
-    'RMDP_api.apps.restaurant',
-    'RMDP_api.apps.driver',
-    'RMDP_api.apps.menu',
-    'RMDP_api.apps.geolocation'
+    'RMDP_api.order',
+    'RMDP_api.restaurant',
+    'RMDP_api.driver',
+    'RMDP_api.menu',
+    'RMDP_api.geolocation'
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

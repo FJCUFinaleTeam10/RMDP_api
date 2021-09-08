@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 
 import itertools
 import math
-from web.RMDP_api.apps.driver import driver
-from web.RMDP_api.apps.restaurant import restaurant
+from web.RMDP_api.driver import driver
+from web.RMDP_api.restaurant import restaurant
 
 
 class Singleton(object):

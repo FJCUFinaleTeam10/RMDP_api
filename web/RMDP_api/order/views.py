@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view
 from .models import order
 from .serializers import OrderSerializer
 from django.apps import apps
-
+from..restaurant.models import restaurant
 # Create your views here.
 @api_view(['GET'])
 def listAll(request):
@@ -21,7 +21,6 @@ def listAll(request):
 def createOrder(request):
     try:
         newOrder = order(order_request_time=datetime.strptime(request.data['requestTime'], "%d-%m-%Y %H:%M:%S"))
-        newOrder.deadlineTime = newOrder.order_requestTime + timedelta(minutes=40)
         newOrder.order_restaurant_carrier_restaurantId = request.data['restaurantId']
         newOrder.order_delivered_customer_date = None
         newOrder.driverId = None
@@ -53,9 +52,8 @@ def getOrder(request):
 @api_view(['POST'])
 def getOrderBaseOnCity(request):
     cityName = request.data['params']['city']
-    restaurant = apps.get_model('restaurant', 'restaurant')
-    filteredCityList = restaurant.objects(cityName=cityName)
-    orderList = order.objects(cityName=cityName)
+    filteredCityList = restaurant.objects(City=cityName).values_list('id')
+    orderList = order.objects(cityName in filteredCityList)
     result = OrderSerializer(orderList, many=True)
     response = JsonResponse(result.data, safe=False)
     response["Access-Control-Allow-Origin"] = "*"
