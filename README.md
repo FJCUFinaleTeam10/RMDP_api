@@ -10,37 +10,58 @@ and type
 
     $ docker-compose up
 
-##API - data
+##API - get data
 ###Driver data 
 ###get all driver
 
     POST /driver/getalldriver/ 
 
-###Response
-
-    {
-        "id": "6134398187af41afea62f825",
-        "Capacity": 0,
-        "City": "Agra",
-        "Country_Code": 1,
-        "Latitude": 27.220141110852705,
-        "Longitude": 78.0062402670762,
-        "Route": [],
-        "Velocity": 0
-    },
-    {
-        "id": "6134398187af41afea62f826",
-        "Capacity": 0,
-        "City": "Agra",
-        "Country_Code": 1,
-        "Latitude": 27.215615345970964,
-        "Longitude": 78.04961345045498,
-        "Route": [],
-        "Velocity": 0
-    },...
 
 ###get city driver
 
     POST /driver/getdriverbaseoncity/
 
 
+###Geolaction data
+###get cities of desginated country
+    
+    POST /geolocation/getcity/
+
+###get all countries
+
+    GET /geolocation/getallcountrycode/
+
+###get all cities
+
+    GET /geolocation/getallcities/
+
+###Menu data
+###get designated restaurant menu
+
+    POST /menu/getMenuBaseOnRestaurant/
+
+###Order data
+###get all order
+    
+    GET /order/listAll/
+
+###create an order
+
+    POST /order/createOrder/
+
+###Restaurant data
+###get all restaurant data
+
+    POST /restaurant/getallrestaurantlist/
+
+###get restaurant of city or all restaurant
+
+    POST /restaurant/getrestaurantlist/
+
+###get restaurant of city
+
+    POST /restaurant/getrestaurantbaseoncity/
+
+###get restaurant by using restaurant id
+
+    POST /restaurant/getrestaurantbaseonid/
