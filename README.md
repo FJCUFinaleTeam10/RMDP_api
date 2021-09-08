@@ -36,6 +36,32 @@ and type
     GET /geolocation/getallcities/
 
 ###Menu data
-###get all menu
+###get designated restaurant menu
 
-    POST /menu/getMenu/ 
+    POST /menu/getMenuBaseOnRestaurant/
+
+###Order data
+###get all order
+    
+    GET /order/listAll/
+
+###create an order
+
+    POST /order/createOrder/
+
+###Restaurant data
+###get all restaurant data
+
+    POST /restaurant/getallrestaurantlist/
+
+###get restaurant of city or all restaurant
+
+    POST /restaurant/getrestaurantlist/
+
+###get restaurant of city
+
+    POST /restaurant/getrestaurantbaseoncity/
+
+###get restaurant by using restaurant id
+
+    POST /restaurant/getrestaurantbaseonid/
