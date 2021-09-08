@@ -11,7 +11,11 @@ SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure--0i%4e9*vbbj&g+w&i-lfanunw_899j@k8c7d0@mq#p)qdbs5n'
 DEBUG = True
-connect("example-project", host="mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin")
+if DEBUG:
+    connect("example-project", host="mongodb://admin:admin@localhost:27017/RMDP?authSource=admin")
+else:
+    connect("example-project", host="mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin")
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
