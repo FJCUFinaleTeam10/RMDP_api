@@ -3,6 +3,7 @@ from mongoengine import *
 
 class order(Document):
     order_approved_at = StringField()
+    driver_id = StringField()
     order_customer_Latitude = FloatField()
     order_customer_Longitude = FloatField()
 

@@ -171,10 +171,6 @@ class RMDP:
             totalSlack += self.slackDelay(routePerVehicle)
         return totalSlack
 
-    # def showPosition(self):
-    #     plt.scatter(self.x_R, self.y_R, c='red', s=25)
-    #     plt.scatter(self.x_V, self.y_V, c='green', s=25)
-    #     plt.show()
 
     # def updateDriverLocation(self, time):
     #     hasOrderVehicle: list = [routePerVehicle for routePerVehicle in self.Theta_x if

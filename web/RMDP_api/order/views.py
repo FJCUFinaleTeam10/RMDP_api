@@ -20,17 +20,15 @@ def listAll(request):
 @api_view(['POST'])
 def createOrder(request):
     try:
-        newOrder = order(order_request_time=datetime.strptime(request.data['requestTime'], "%d-%m-%Y %H:%M:%S"))
-        newOrder.order_restaurant_carrier_restaurantId = request.data['restaurantId']
+        newOrder = order(order_request_time=request.data['requestTime'])
+        newOrder.order_restaurant_carrier_restaurantId = int(request.data['restaurantId'])
         newOrder.order_delivered_customer_date = None
         newOrder.driverId = None
-        newOrder.order_approved_at = None
-        newOrder.deliveried_customed_date = None
+        newOrder.order_approved_at = ""
         newOrder.order_restaurant_carrier_date = None
         newOrder.order_status = 'unassign'
-        newOrder.delivered_customer_Longitude = request.data['params']['longitude']
-        newOrder.delivered_customer_Latitude = request.data['params']['latitude']
-        newOrder.orderId = order.objects.count() + 1
+        newOrder.order_customer_Longitude = float(request.data['longitude'])
+        newOrder.order_customer_Latitude = float(request.data['latitude'])
         newOrder.save()
         return HttpResponse('ok')
     except ValueError:
