@@ -2,6 +2,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 from mongoengine import connect
+import RMDP_api.tasks
 
 # BASE_DIR = Path(__file__).resolve().parent.parent
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -11,11 +12,18 @@ SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure--0i%4e9*vbbj&g+w&i-lfanunw_899j@k8c7d0@mq#p)qdbs5n'
+
+
+def mongoClientUrl(DEBUG):
+    if DEBUG:
+        return "mongodb://admin:admin@localhost:27017/RMDP?authSource=admin"
+    else:
+        return "mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin"
+
+
 DEBUG = True
 if DEBUG:
-    connect("example-project", host="mongodb://admin:admin@localhost:27017/RMDP?authSource=admin")
-else:
-    connect("example-project", host="mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin")
+    connect("example-project", host=mongoClientUrl(DEBUG))
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -137,7 +145,7 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": timedelta(seconds=1),
     },
     "RMDP": {
-        "task": ".run_RMDP",
+        "task": "RMDP_api.tasks.run_RMDP",
         "schedule": timedelta(seconds=1),
     },
 }

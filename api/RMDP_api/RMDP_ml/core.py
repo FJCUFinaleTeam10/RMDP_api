@@ -2,11 +2,10 @@ import copy
 # from generatingData import generateTestData
 # from Math.Geometry import interSectionCircleAndLine
 from datetime import datetime, timedelta
-
+from pymongo import MongoClient
 import itertools
 import math
-from api.driver.models import driver
-from api.restaurant.models import restaurant
+import threading
 
 
 class Singleton(object):
@@ -18,46 +17,65 @@ class Singleton(object):
         return class_._instance
 
 
+def mongoClientUrl(DEBUG):
+    if DEBUG:
+        return "mongodb://admin:admin@localhost:27017/RMDP?authSource=admin"
+    else:
+        return "mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin"
+
+
 class RMDP:
     _instance = None
 
-    def __init__(self, delay: int, maxLengthPost: int, maxTimePost: int,
-                 capacity: int, velocity: int, restaurantPrepareTime: int, deadlineTime):
-
-        self.D_0 = []  # Order
+    def __init__(self):
         self.Order_num = 2
         self.Delta_S = 0
         self.time_buffer = 0
         self.t_Pmax = 40
         self.t_ba = 10
-        self.delay = delay
-        self.maxLengthPost = maxLengthPost
-        self.maxTimePost = maxTimePost
-        self.capacity = capacity
-        self.velocity: float = velocity * 0.2777777777777778
-        self.restaurantPrepareTime = restaurantPrepareTime
-        self.deadlineTime = deadlineTime
+        self.delay = 5
+        self.maxLengthPost = 5
+        self.maxTimePost = 15 * 60
+        self.capacity = 5
+        self.velocity: float = 50 * 0.2777777777777778
+        self.restaurantPrepareTime = 20 * 60
+        self.deadlineTime = 40 * 60
         self.Theta_x = []
         self.P_x = []
+        self.client = MongoClient('mongodb://admin:admin@localhost:27017/RMDP?authSource=admin')
+        self.databaseName = self.client["RMDP"]
+        self.restaurantCollection = self.databaseName["restaurant"]
+        self.driverCollection = self.databaseName["driver"]
+        self.all_citiesCollection = self.databaseName["all_cities"]
+        self.country_codeCollection = self.databaseName["country_code"]
+        self.orderCollection = self.databaseName["order"]
 
-    def runRMDP(self, unAssignOrder: list):
+    def generateThread(self):
+        cityList = list(self.all_citiesCollection.find())
+        threads = []
+        for i in range(len(cityList)):
+            threads.append(threading.Thread(target=self.runRMDP, args=(cityList[i]['Country_Code'],)))
+            threads[i].start()
+        for i in range(len(cityList)):
+            threads[i].join()
+
+    def runRMDP(self, cityCode):
         try:
-            self.restaurantlist = list(restaurant.objects.all())
-            self.vehicleList = list(driver.objects.all())
 
+            restaurantList = list(self.restaurantCollection.find({"Country_Code":  cityCode}))
+            driverList = list(self.driverCollection.find({"Country_Code":  cityCode}))
+            filterrestTaurantCode = list(map(lambda x: x['Restaurant_ID'],restaurantList))
+            unAssignOrder = list(self.orderCollection.find({"order_status": "unasgined","order_restaurant_carrier_restaurantId":{"$in":filterrestTaurantCode}}))
+            postponedOrder = list(self.orderCollection.find({"order_status": "watting","order_restaurant_carrier_restaurantId":{"$in":filterrestTaurantCode}}))
             delay: float = float("inf")
             slack = 0
 
             unassignedOrderPermutation = list(itertools.permutations(unAssignOrder))
             for permutation in unassignedOrderPermutation:
-                Theta_hat = copy.deepcopy(self.vehicleList)  # Candidate route plan
-                P_hat = driver.objects.filter(order_status='watting')
-
-                if P_hat is None:
-                    P_hat = []
+                Theta_hat = copy.deepcopy(driverList)  # Candidate route plan
+                P_hat = copy.deepcopy(postponedOrder)
 
                 for D in permutation:
-
                     currentPairdDriver = self.FindVehicle(D)
                     D["driverId"] = (str(currentPairdDriver.id))
                     currentPairdRestaurentList = list(
@@ -113,8 +131,7 @@ class RMDP:
         try:
             delay: float = 0.0
             tripTime: float = 0.0
-            currentDriverLocation = {'longitude': driver['longitude'],
-                                     'latitude': driver['latitude']}
+            currentDriverLocation = {'longitude': driver['longitude'], 'latitude': driver['latitude']}
             currentDriver = copy.deepcopy(driver)
             currentDriver.route.insert(0, currentDriverLocation)
             for i in range(1, len(currentDriver['route']), 1):
@@ -170,9 +187,6 @@ class RMDP:
         for routePerVehicle in Theta_hat:
             totalSlack += self.slackDelay(routePerVehicle)
         return totalSlack
-
-
-
 
     def tripTime(self, driv, res, order):
         disDriver2Res = self.distance(float(driv.latitude), float(driv.longitude), float(res.latitude),
@@ -255,21 +269,28 @@ class RMDP:
             updateDriver = list(filter(lambda x: len(x['route']) > 0, self.Theta_x))
             for pairdDriver in updateDriver:
                 currentObject = pairdDriver.to_mongo().to_dict()
-                driver.objects(id=pairdDriver.id).update(
-                    capacity=currentObject['capacity'],
-                    route=currentObject['route'],
-                    velocity=currentObject['velocity']
-                )
+                self.driverCollection.update_one({
+                    '_id': pairdDriver.id
+                }, {
+                    '$set': {
+                        'capacity': currentObject['capacity'],
+                        'route': currentObject['route'],
+                        'velocity': currentObject['velocity'],
+                    }
+                }, upsert=False)
         except ValueError:
-            print((ValueError))
+            print(ValueError)
 
     def updatePosponedOrder(self):
         for postpoendOrder in self.P_x:
             try:
-                currentObject = postpoendOrder.to_mongo().to_dict()
-                driver.objects(id=postpoendOrder.id).update(
-                    order_status='watting'
-                )
+                self.orderCollection.update_one({
+                    '_id': postpoendOrder.id
+                }, {
+                    '$set': {
+                        'order_status': 'watting'
+                    }
+                }, upsert=False)
             except ValueError:
                 print((ValueError))
 
@@ -277,8 +298,12 @@ class RMDP:
         for pairedOrder in self.Theta_x:
             try:
                 currentObject = pairedOrder.to_mongo().to_dict()
-                driver.objects(id=currentObject.id).update(
+                self.orderCollection.objects(id=currentObject.id).update(
                     order_status='processing'
                 )
             except ValueError:
-                print((ValueError))
+                print(ValueError)
+
+
+test = RMDP()
+test.generateThread()
