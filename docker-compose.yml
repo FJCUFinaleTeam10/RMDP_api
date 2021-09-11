@@ -1,22 +1,18 @@
 version: "3.7"
 services:
   web:
-    restart: always
-    build: ./web
-    expose:
-      - "8000"
-    links:
-      - mongodb:mongodb
-      - redis:redis
+    build: ./api
+    command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - web-django:/usr/src/app
-      - web-static:/usr/src/app/static
-    networks:
-      - rmdp_api
-    env_file: .env
-    command: /usr/local/bin/gunicorn RMDP_api.wsgi:application -w 2 -b :8000
+      - ./api/:/usr/src/app/
     ports:
       - "8000:8000"
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=dbaa1_i7%*3r9-=z-+_mz4r-!qeed@(-a_r(g@k8jo8y3r27%m
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+    depends_on:
+      - redis
   mongodb:
         image: mongo:latest
         container_name: mongo-server
@@ -32,7 +28,6 @@ services:
            # mongodump'ed data goes here
            - ./mongo-seed-data:/data/mongo-seed-data
            # script to start the actual import (besides other custom things
-           # you may want to do
            - ./mongodb-scripts:/docker-entrypoint-initdb.d
         networks:
           - rmdp_api
@@ -55,13 +50,38 @@ services:
     depends_on:
       - mongodb
 
-  worker:
-    build:
-      context: ./celery-queue
-      dockerfile: Dockerfile
+  redis:
+    container_name: redis
+    image: redis:latest
+    command: ["redis-server", "--bind", "redis", "--port", "6379"]
+    ports:
+        - "6379:6379"
+    volumes:
+      - './conf/redis/redis.conf:/tmp/redis.conf'
+    networks:
+      - rmdp_api
+  celery:
+    build: ./api
+    command: celery -A RMDP_api worker -l info
+    volumes:
+      - ./api/:/usr/src/app/
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=dbaa1_i7%*3r9-=z-+_mz4r-!qeed@(-a_r(g@k8jo8y3r27%m
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
     depends_on:
       - redis
-    volumes: ['./celery-queue:/queue']
+  celery-beat:
+    build: ./api
+    command: celery -A RMDP_api beat -l info
+    volumes:
+      - ./api/:/usr/src/app/
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=dbaa1_i7%*3r9-=z-+_mz4r-!qeed@(-a_r(g@k8jo8y3r27%m
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+    depends_on:
+      - redis
   monitor:
       build:
         context: ./celery-queue
@@ -75,15 +95,6 @@ services:
       volumes: [ './celery-queue:/queue' ]
       networks:
         - rmdp_api
-  redis:
-    restart: always
-    image: redis:latest
-    ports:
-      - "6379:6379"
-    volumes:
-      - redisdata:/data
-    networks:
-      - rmdp_api
 networks:
     rmdp_api:
       driver: bridge

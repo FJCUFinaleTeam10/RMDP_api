@@ -6,7 +6,7 @@
         <ServerConfiguration>
           <option name="label" value="localhost" />
           <option name="port" value="6379" />
-          <option name="serverUrl" value="localhost" />
+          <option name="serverUrl" value="0.0.0.0" />
           <option name="sshTunnelingConfiguration">
             <SshTunnelingConfiguration />
           </option>

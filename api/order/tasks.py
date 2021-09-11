@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
-from celery import task
-from django.utils.timezone import now
+# from celery import task
+# from django.utils.timezone import now
 
 
 # @task

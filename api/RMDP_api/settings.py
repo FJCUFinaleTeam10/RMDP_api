@@ -1,7 +1,8 @@
-
 import os
+from datetime import timedelta
 from pathlib import Path
 from mongoengine import connect
+
 # BASE_DIR = Path(__file__).resolve().parent.parent
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
@@ -10,7 +11,7 @@ SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure--0i%4e9*vbbj&g+w&i-lfanunw_899j@k8c7d0@mq#p)qdbs5n'
-DEBUG = False
+DEBUG = True
 if DEBUG:
     connect("example-project", host="mongodb://admin:admin@localhost:27017/RMDP?authSource=admin")
 else:
@@ -26,12 +27,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_mongoengine',
     'corsheaders',
-    #apps
-    'RMDP_api.order',
-    'RMDP_api.restaurant',
-    'RMDP_api.driver',
-    'RMDP_api.menu',
-    'RMDP_api.geolocation'
+    # apps
+    'order',
+    'restaurant',
+    'driver',
+    'menu',
+    'geolocation',
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -120,13 +121,27 @@ USE_L10N = True
 
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.2/howto/static-files/
-
 STATIC_URL = '/static/'
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+CELERY_BROKER_URL = DEBUG and "redis://localhost:6379" or "redis://redis:6379"
+CELERY_RESULT_BACKEND = DEBUG and "redis://localhost:6379" or "redis://redis:6379"
+CELERY_BEAT_SCHEDULE = {
+    "sample_task": {
+        "task": "RMDP_api.tasks.sample_task",
+        "schedule": timedelta(seconds=1),
+    },
+    "send_email_report": {
+        "task": "RMDP_api.tasks.send_email_report",
+        "schedule": timedelta(seconds=1),
+    },
+    "RMDP": {
+        "task": ".run_RMDP",
+        "schedule": timedelta(seconds=1),
+    },
+}
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "noreply@email.com"
+ADMINS = [("testuser", "test.user@email.com"), ]
