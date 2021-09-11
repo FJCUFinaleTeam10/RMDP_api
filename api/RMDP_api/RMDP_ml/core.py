@@ -42,7 +42,7 @@ class RMDP:
         self.deadlineTime = 40 * 60
         self.Theta_x = []
         self.P_x = []
-        self.client = MongoClient('mongodb://admin:admin@localhost:27017/RMDP?authSource=admin')
+        self.client = MongoClient('mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin')
         self.databaseName = self.client["RMDP"]
         self.restaurantCollection = self.databaseName["restaurant"]
         self.driverCollection = self.databaseName["driver"]
@@ -120,8 +120,8 @@ class RMDP:
                     delay = S
                     self.Theta_x = copy.deepcopy(Theta_hat)
                     self.P_x = copy.deepcopy(P_hat)
-            print(self.Theta_x)
-            print(self.P_x)
+            # print(self.Theta_x)
+            # print(self.P_x)
             self.Remove()
             self.updateValue()
         except ValueError:
@@ -131,14 +131,14 @@ class RMDP:
         try:
             delay: float = 0.0
             tripTime: float = 0.0
-            currentDriverLocation = {'longitude': driver['longitude'], 'latitude': driver['latitude']}
+            currentDriverLocation = {'Longitude': driver['Longitude'], 'Latitude': driver['Latitude']}
             currentDriver = copy.deepcopy(driver)
-            currentDriver.route.insert(0, currentDriverLocation)
-            for i in range(1, len(currentDriver['route']), 1):
-                previousNode = currentDriver['route'][i - 1]
-                currentNode = currentDriver['route'][i]
-                currentDistance = self.distance(float(previousNode['latitude']), float(previousNode['longitude']),
-                                                float(currentNode['latitude']), float(currentNode['longitude']))
+            currentDriver['Route'].insert(0, currentDriverLocation)
+            for i in range(1, len(currentDriver['Route']), 1):
+                previousNode = currentDriver['Route'][i - 1]
+                currentNode = currentDriver['Route'][i]
+                currentDistance = self.distance(float(previousNode['Latitude']), float(previousNode['Longitude']),
+                                                float(currentNode['Latitude']), float(currentNode['Longitude']))
                 tripTime += currentDistance / self.velocity
                 if 'restaurantId' in currentNode:
                     deadlineTime = self.deadlineTime
@@ -212,12 +212,12 @@ class RMDP:
         try:
             delay: int = 0
             tripTime: int = 0
-            currentRoute: list = copy.deepcopy(driver['route'])
+            currentRoute: list = copy.deepcopy(driver['Route'])
             currentRoute.append(driver)
             for i in range(1, len(currentRoute), 1):
-                currentDistance = self.distance(float(currentRoute[i - 1]['latitude']),
-                                                float(currentRoute[i - 1]['longitude']),
-                                                float(currentRoute[i]['latitude']), float(currentRoute[i]['longitude']))
+                currentDistance = self.distance(float(currentRoute[i - 1]['Latitude']),
+                                                float(currentRoute[i - 1]['Longitude']),
+                                                float(currentRoute[i]['Latitude']), float(currentRoute[i]['Longitude']))
                 tripTime += currentDistance / self.velocity
                 if 'restaurantId' in currentRoute[i]:
                     deadLine = datetime.strptime(currentRoute[i]['deadLineTime'],
@@ -266,17 +266,17 @@ class RMDP:
 
     def updateValue(self):
         try:
-            updateDriver = list(filter(lambda x: len(x['route']) > 0, self.Theta_x))
+            updateDriver = list(filter(lambda x: len(x['Route']) > 0, self.Theta_x))
             for pairdDriver in updateDriver:
                 currentObject = pairdDriver.to_mongo().to_dict()
                 self.driverCollection.update_one({
-                    '_id': pairdDriver.id
-                }, {
-                    '$set': {
-                        'capacity': currentObject['capacity'],
-                        'route': currentObject['route'],
-                        'velocity': currentObject['velocity'],
-                    }
+                        '_id': pairdDriver.id
+                    }, {
+                        '$set': {
+                            'capacity': currentObject['capacity'],
+                            'route': currentObject['route'],
+                            'velocity': currentObject['velocity'],
+                        }
                 }, upsert=False)
         except ValueError:
             print(ValueError)
@@ -305,5 +305,5 @@ class RMDP:
                 print(ValueError)
 
 
-test = RMDP()
-test.generateThread()
+# test = RMDP()
+# test.generateThread()

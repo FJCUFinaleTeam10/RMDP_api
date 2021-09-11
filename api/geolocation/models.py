@@ -6,7 +6,7 @@ class all_cities(Document):
     Country_Code = IntField()
     Latitude = FloatField()
     Longitude = FloatField()
-
+    radius = FloatField()
 
 class country_code(Document):
     country = StringField()

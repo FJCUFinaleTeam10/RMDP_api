@@ -14,6 +14,8 @@ services:
       - DJANGO_SETTINGS_MODULE= 'RMDP_api.settings'
     depends_on:
       - redis
+    networks:
+      - rmdp_api
   mongodb:
         image: mongo:latest
         container_name: mongo-server
@@ -73,6 +75,9 @@ services:
       DJANGO_SETTINGS_MODULE: 'RMDP_api.settings'
     depends_on:
       - redis
+      - mongodb
+    networks:
+      - rmdp_api
   celery-beat:
     build: ./api
     command: celery -A RMDP_api beat -l info
@@ -85,6 +90,8 @@ services:
       DJANGO_SETTINGS_MODULE: 'RMDP_api.settings'
     depends_on:
       - redis
+    networks:
+      - rmdp_api
   monitor:
       build: ./api
       ports:
@@ -103,6 +110,4 @@ networks:
       driver: bridge
 volumes:
         mongodb-volume:
-        web-django:
-        web-static:
         redisdata:

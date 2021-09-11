@@ -2,10 +2,9 @@ import os
 from datetime import timedelta
 from pathlib import Path
 from mongoengine import connect
-import RMDP_api.tasks
+from .tasks import *
 
-# BASE_DIR = Path(__file__).resolve().parent.parent
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__).resolve().parent.parent
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 
 # Quick-start development settings - unsuitable for production
@@ -21,7 +20,7 @@ def mongoClientUrl(DEBUG):
         return "mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin"
 
 
-DEBUG = True
+DEBUG = False
 if DEBUG:
     connect("example-project", host=mongoClientUrl(DEBUG))
 
@@ -73,7 +72,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'RMDP_api.wsgi.application'
+WSGI_APPLICATION = '.wsgi.application'
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://\w+\.example\.com$",
@@ -112,8 +111,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 # Celery
 # Celery
-BROKER_URL = 'redis://localhost:6379'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+BROKER_URL = DEBUG and "redis://localhost:6379" or "redis://redis:6379"
+CELERY_RESULT_BACKEND = DEBUG and "redis://localhost:6379" or "redis://redis:6379"
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -136,17 +135,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CELERY_BROKER_URL = DEBUG and "redis://localhost:6379" or "redis://redis:6379"
 CELERY_RESULT_BACKEND = DEBUG and "redis://localhost:6379" or "redis://redis:6379"
 CELERY_BEAT_SCHEDULE = {
-    "sample_task": {
-        "task": "RMDP_api.tasks.sample_task",
-        "schedule": timedelta(seconds=1),
-    },
-    "send_email_report": {
-        "task": "RMDP_api.tasks.send_email_report",
-        "schedule": timedelta(seconds=1),
-    },
-    "RMDP": {
-        "task": "RMDP_api.tasks.run_RMDP",
-        "schedule": timedelta(seconds=1),
+    # "sample_task": {
+    #     "task": "RMDP_api.tasks.sample_task",
+    #     "schedule": timedelta(seconds=1),
+    # },
+    # "send_email_report": {
+    #     "task": "RMDP_api.tasks.send_email_report",
+    #     "schedule": timedelta(seconds=1),
+    # },
+    # "RMDP": {
+    #     "task": "RMDP_api.tasks.run_RMDP",
+    #     "schedule": timedelta(seconds=30),
+    # },
+    "generatingOrder": {
+        "task": ".tasks.generatingOrder",
+        "schedule": timedelta(seconds=10),
     },
 }
 
