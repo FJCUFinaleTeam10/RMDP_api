@@ -1,6 +1,7 @@
 import copy
 # from generatingData import generateTestData
 # from Math.Geometry import interSectionCircleAndLine
+import os
 from datetime import datetime, timedelta
 from pymongo import MongoClient
 import itertools
@@ -28,6 +29,8 @@ class RMDP:
     _instance = None
 
     def __init__(self):
+        self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
+        print(int(os.environ['DEBUG']) == 1)
         self.Order_num = 2
         self.Delta_S = 0
         self.time_buffer = 0
@@ -42,7 +45,7 @@ class RMDP:
         self.deadlineTime = 40 * 60
         self.Theta_x = []
         self.P_x = []
-        self.client = MongoClient('mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin')
+        self.client = MongoClient(mongoClientUrl(self.DEBUG))
         self.databaseName = self.client["RMDP"]
         self.restaurantCollection = self.databaseName["restaurant"]
         self.driverCollection = self.databaseName["driver"]
@@ -62,11 +65,13 @@ class RMDP:
     def runRMDP(self, cityCode):
         try:
 
-            restaurantList = list(self.restaurantCollection.find({"Country_Code":  cityCode}))
-            driverList = list(self.driverCollection.find({"Country_Code":  cityCode}))
-            filterrestTaurantCode = list(map(lambda x: x['Restaurant_ID'],restaurantList))
-            unAssignOrder = list(self.orderCollection.find({"order_status": "unasgined","order_restaurant_carrier_restaurantId":{"$in":filterrestTaurantCode}}))
-            postponedOrder = list(self.orderCollection.find({"order_status": "watting","order_restaurant_carrier_restaurantId":{"$in":filterrestTaurantCode}}))
+            restaurantList = list(self.restaurantCollection.find({"Country_Code": cityCode}))
+            driverList = list(self.driverCollection.find({"Country_Code": cityCode}))
+            filterrestTaurantCode = list(map(lambda x: x['Restaurant_ID'], restaurantList))
+            unAssignOrder = list(self.orderCollection.find(
+                {"order_status": "unasgined", "order_restaurant_carrier_restaurantId": {"$in": filterrestTaurantCode}}))
+            postponedOrder = list(self.orderCollection.find(
+                {"order_status": "watting", "order_restaurant_carrier_restaurantId": {"$in": filterrestTaurantCode}}))
             delay: float = float("inf")
             slack = 0
 
@@ -270,13 +275,13 @@ class RMDP:
             for pairdDriver in updateDriver:
                 currentObject = pairdDriver.to_mongo().to_dict()
                 self.driverCollection.update_one({
-                        '_id': pairdDriver.id
-                    }, {
-                        '$set': {
-                            'capacity': currentObject['capacity'],
-                            'route': currentObject['route'],
-                            'velocity': currentObject['velocity'],
-                        }
+                    '_id': pairdDriver.id
+                }, {
+                    '$set': {
+                        'capacity': currentObject['capacity'],
+                        'route': currentObject['route'],
+                        'velocity': currentObject['velocity'],
+                    }
                 }, upsert=False)
         except ValueError:
             print(ValueError)
@@ -303,7 +308,6 @@ class RMDP:
                 )
             except ValueError:
                 print(ValueError)
-
 
 # test = RMDP()
 # test.generateThread()

@@ -1,7 +1,8 @@
 # from generatingData import generateTestData
 # from Math.Geometry import interSectionCircleAndLine
+import os
 import threading
-from datetime import date
+from datetime import date, datetime
 import random
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -28,8 +29,9 @@ class userSimulator:
     _instance = None
 
     def __init__(self):
-
-        self.client = MongoClient('mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin')
+        self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
+        print(int(os.environ['DEBUG']) == 1)
+        self.client = MongoClient(mongoClientUrl(self.DEBUG))
         self.databaseName = self.client["RMDP"]
         self.restaurantCollection = self.databaseName["restaurant"]
         self.driverCollection = self.databaseName["driver"]
@@ -47,25 +49,25 @@ class userSimulator:
             threads[i].join()
 
     def generateOrder(self, index, currentCity):
-        url = 'http://localhost:8000/order/createOrder/'  # Set destination URL here
-        generatedLocation = self.generateLocation(currentCity['Longitude'], currentCity['Latitude'],
-                                                  currentCity['radius'])
-        filteredRestaurant = list(self.restaurantCollection.find({"City": currentCity['City']}, {'Restaurant_ID': 1}))
-        post_fields = {
-            'longitude': generatedLocation[0],
-            'latitude': generatedLocation[1],
-            'requestTime': date.today(),
-            'restaurantId': filteredRestaurant[random.randint(0, len(filteredRestaurant)-1)]['Restaurant_ID'],
-            'totalPrice:': random.uniform(1.0, 1000.0),
-            'firstName': "test firstName" + str(index),
-            'lastName': "test lastName" + str(index),
-            ' email': "testEmail" + str(index) + '@gmail.com',
-            'description': "test description",
-            'telephone': "0123456789",
-        }  # Set POST fields here
-        request = Request(url, urlencode(post_fields).encode())
-        json = urlopen(request).read().decode()
-        print(json)
+        try:
+            generatedLocation = self.generateLocation(currentCity['Longitude'], currentCity['Latitude'],
+                                                      currentCity['radius'])
+            filteredRestaurant = list(
+                self.restaurantCollection.find({"City": currentCity['City']}, {'Restaurant_ID': 1}))
+            self.orderCollection.insert({
+                'order_approved_at': None,
+                'order_customer_Longitude': generatedLocation[1],
+                'order_customer_Latitude': generatedLocation[0],
+                'order_delivered_customer_date': None,
+                'order_request_time': datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
+                'order_restaurant_carrier_date': None,
+                'order_restaurant_carrier_restaurantId':
+                    filteredRestaurant[random.randint(0, len(filteredRestaurant) - 1)]['Restaurant_ID'],
+                'driver_id': None,
+                'order_status': 'unasgined'
+            })
+        except ValueError:
+            print(ValueError)
 
     def generateLocation(self, Longitude, Latitude, Radius):
         return [random.uniform(float(Latitude), float(Latitude) + float(Radius)),

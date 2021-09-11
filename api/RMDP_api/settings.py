@@ -2,7 +2,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 from mongoengine import connect
-from .tasks import *
+import RMDP_api.tasks
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
@@ -12,6 +12,9 @@ SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure--0i%4e9*vbbj&g+w&i-lfanunw_899j@k8c7d0@mq#p)qdbs5n'
 
+DEBUG = False if int(os.environ['DEBUG']) == 1 else True
+print(int(os.environ['DEBUG']) == 1)
+
 
 def mongoClientUrl(DEBUG):
     if DEBUG:
@@ -20,7 +23,6 @@ def mongoClientUrl(DEBUG):
         return "mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin"
 
 
-DEBUG = False
 if DEBUG:
     connect("example-project", host=mongoClientUrl(DEBUG))
 
@@ -72,7 +74,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = '.wsgi.application'
+WSGI_APPLICATION = 'RMDP_api.wsgi.application'
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://\w+\.example\.com$",
@@ -148,7 +150,7 @@ CELERY_BEAT_SCHEDULE = {
     #     "schedule": timedelta(seconds=30),
     # },
     "generatingOrder": {
-        "task": ".tasks.generatingOrder",
+        "task": "RMDP_api.tasks.generatingOrder",
         "schedule": timedelta(seconds=10),
     },
 }
