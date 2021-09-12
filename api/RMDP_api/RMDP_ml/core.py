@@ -93,38 +93,42 @@ class RMDP:
                     currentPairdRestaurent = next(
                         filter(lambda x: int(x['Restaurant_ID']) == int(D["order_restaurant_carrier_restaurantId"]),
                                restaurantList), None)
-                    currentPairdDriver = self.FindVehicle(D, currentPairdRestaurent, driverList)
-                    D["driverId"] = (str(currentPairdDriver.id))
-
-                    currentPairdRestaurent['orderId'] = str(D['orderId'])
-                    currentPairdDriver.capacity += 1
-                    Theta_hat = self.AssignOrder(Theta_hat, D, currentPairdDriver, currentPairdRestaurent)
+                    currentPairdDriverId = self.FindVehicle(D, currentPairdRestaurent, driverList)
+                    D["driver_id"] = (str(driverList[currentPairdDriverId]['_id']))
+                    currentPairdRestaurent['orderId'] = str(D['_id'])
+                    driverList[currentPairdDriverId]['Capacity'] += 1
+                    driverList[currentPairdDriverId]['Route'] = copy.deepcopy(
+                        self.AssignOrder(D, driverList[currentPairdDriverId], currentPairdRestaurent))
                     if self.Postponement(P_hat, D, self.maxLengthPost, self.t_Pmax):
                         if D not in P_hat:
                             P_hat.append(D)
                     else:
-                        while (D.t - P_hat[0].t) >= self.t_Pmax:
-                            PairdDriver = self.FindVehicle(P_hat[0])
-                            P_hat[0].setDriverId(PairdDriver.get_id())
-                            PairdDriver.setCurrentCapacity(PairdDriver.getCurrentCapacity() + 1)
-                            PairedRestaurent = copy.deepcopy(restaurantList[P_hat[0].getRestaurantId() - 1])
-                            PairedRestaurent.setOrderId(D.getId())
+                        while (datetime.strptime(D['order_request_time'], '%d-%m-%Y %H:%M:%S') - datetime.strptime(
+                                P_hat[0]['order_request_time'], '%d-%m-%Y %H:%M:%S')) >= timedelta(minutes=self.t_Pmax):
 
-                            self.AssignOrder(Theta_hat, P_hat[0], PairdDriver, PairedRestaurent)
-
+                            PairdDriverId = self.FindVehicle(P_hat[0])
+                            P_hat[0]['driver_id'] = str(driverList[PairdDriverId]['_id'])
+                            driverList[PairdDriverId]['Capacity'] += 1
+                            PairedRestaurent = copy.deepcopy(next(filter(lambda x: int(x['Restaurant_ID']) == int(
+                                pospondedOrder["order_restaurant_carrier_restaurantId"]), restaurantList), None))
+                            PairedRestaurent['orderId'] = str(P_hat[0]['_id'])
+                            driverList[PairdDriverId]['Route'] = copy.deepcopy(
+                                self.AssignOrder(P_hat[0], driverList[PairdDriverId], PairedRestaurent))
                             P_hat.pop(0)
                             if len(P_hat) == 0:
                                 break
-
                         if len(P_hat) >= self.maxLengthPost:
                             for pospondedOrder in P_hat:
-                                PairdDriver = self.FindVehicle(pospondedOrder)
-                                PairdDriver.setCurrentCapacity(PairdDriver.getCurrentCapacity() + 1)
-                                pospondedOrder.setDriverId(PairdDriver.get_id())
-                                PairedRestaurent = copy.deepcopy(
-                                    restaurantList[pospondedOrder.getRestaurantId() - 1])
-                                PairedRestaurent.setOrderId(pospondedOrder.getId())
-                                self.AssignOrder(Theta_hat, pospondedOrder, PairdDriver, PairedRestaurent)
+                                PairdDriverId = self.FindVehicle(pospondedOrder)
+                                driverList[PairdDriverId]['Capacity'] += 1
+                                pospondedOrder['driver_id'] = driverList[PairdDriverId]['_id']
+                                PairedRestaurent = copy.deepcopy(next(
+                                    filter(lambda x: int(x['Restaurant_ID']) == int(
+                                        pospondedOrder["order_restaurant_carrier_restaurantId"]),
+                                           restaurantList), None))
+                                PairedRestaurent['orderId'] = (pospondedOrder['_id'])
+                                driverList[PairdDriverId]['Route'] = copy.deepcopy(
+                                    self.AssignOrder(pospondedOrder, driverList[PairdDriverId], PairedRestaurent))
                             P_hat.clear()
                         P_hat.append(D)
                 S = self.TotalDelay(Theta_hat)
@@ -134,8 +138,6 @@ class RMDP:
                     delay = S
                     Theta_x = copy.deepcopy(Theta_hat)
                     P_x = copy.deepcopy(P_hat)
-            # print(self.Theta_x)
-            # print(self.P_x)
             self.Remove()
             self.updateValue()
             print("Thread:", index, " is finished")
@@ -167,33 +169,34 @@ class RMDP:
         except Exception as e:
             logging.critical(e, exc_info=True)
 
-    def AssignOrder(self, Theta_hat, order, pairedDriver, currentParedRestaurent):
-        currentDriver: list = next((driver for driver in Theta_hat if driver.id == pairedDriver.id), [])
+    def AssignOrder(self, order, pairedDriver, currentParedRestaurent):
+        try:
+            if not pairedDriver['Route']:
+                pairedDriver['Route'].append(currentParedRestaurent)
+                pairedDriver['Route'].append(order)
+            else:
+                first: int = 0
+                second: int = 1
+                minDelayTime = float('inf')
+                for i in range(0, len(pairedDriver['Route']), 1):  # control Restaurant
+                    for j in range(i + 1, len(pairedDriver['Route']) + 2,
+                                   1):  # find all the possible positioins of new order
 
-        if not currentDriver.route:
-            currentDriver.route.append(currentParedRestaurent)
-            currentDriver.route.append(order)
+                        tmpDriver = copy.deepcopy(pairedDriver)
+                        tmpDriver['Route'].insert(i, currentParedRestaurent)
+                        tmpDriver['Route'].insert(j, order)
+                        delayTime = self.deltaSDelay(tmpDriver)
 
-        else:
-            first: int = 0
-            second: int = 1
-            minDelayTime = float('inf')
-            for i in range(0, len(currentDriver.route), 1):  # control Restaurant
-                for j in range(i + 1, len(currentDriver.route) + 2, 1):  # find all the possible positioins of new order
+                        if minDelayTime > delayTime:
+                            minDelayTime = delayTime
+                            first = i
+                            second = j
 
-                    tmpDriver = copy.deepcopy(currentDriver)
-                    tmpDriver.route.insert(i, currentParedRestaurent)
-                    tmpDriver.route.insert(j, order)
-                    delayTime = self.deltaSDelay(tmpDriver)
-
-                    if minDelayTime > delayTime:
-                        minDelayTime = delayTime
-                        first = i
-                        second = j
-
-            currentDriver.route.insert(first, currentParedRestaurent)
-            currentDriver.route.insert(second, order)
-        return Theta_hat
+                pairedDriver['Route'].insert(first, currentParedRestaurent)
+                pairedDriver['Route'].insert(second, order)
+            return pairedDriver['Route']
+        except Exception as e:
+            logging.critical(e, exc_info=True)
 
     # main function
 
@@ -216,18 +219,10 @@ class RMDP:
 
     def FindVehicle(self, Order, OrderRestaurant, driverList):
         try:
-            minTimeDriver = driverList[0]
-            minTimeTolTal = float('inf')
-            # handleDriver = [driver for driver in self.driverList if driver.Capacity < self.Capacity]
             handleDriver = list(filter(lambda driver: int(driver['Capacity']) < int(self.capacity), driverList))
-            for currentDriver in handleDriver:
-                currenTripTime = self.tripTime(currentDriver, OrderRestaurant, Order)
-                if currenTripTime < minTimeTolTal:
-                    minTimeDriver = copy.deepcopy(currentDriver)
-                    minTimeTolTal = currenTripTime
-
-            alternative = driverList.index(min(driverList, key=lambda i: self.tripTime(driverList[i], OrderRestaurant, Order)))
-            return minTimeDriver
+            distanceList = list(map(lambda x: self.tripTime(x, OrderRestaurant, Order), handleDriver))
+            minDriver = distanceList.index(min(distanceList))
+            return minDriver
         except Exception as e:
             logging.critical(e, exc_info=True)
 
@@ -283,7 +278,9 @@ class RMDP:
             if len(P_hat) == 0:  # if postponement set is empty
                 return True
             elif len(P_hat) < self.maxLengthPost:  # if number of postponement <= max of postponement
-                if D.t - P_hat[0].t < t_Pmax:
+
+                if datetime.strptime(D['order_request_time'], '%d-%m-%Y %H:%M:%S') - datetime.strptime(
+                        P_hat[0]['order_request_time'], '%d-%m-%Y %H:%M:%S') < timedelta(minutes=self.t_Pmax):
                     return True
                 else:
                     return False
