@@ -92,9 +92,7 @@ class RMDP:
                 P_hat = copy.deepcopy(postponedOrder)
 
                 for D in permutation:
-                    currentPairdRestaurent = next(
-                        filter(lambda x: int(x['Restaurant_ID']) == int(D["order_restaurant_carrier_restaurantId"]),
-                               restaurantList), None)
+                    currentPairdRestaurent = next(filter(lambda x: int(x['Restaurant_ID']) == int(D["order_restaurant_carrier_restaurantId"]),restaurantList), None)
                     currentPairdDriverId = self.FindVehicle(D, currentPairdRestaurent, currentDriverList)
                     D["driver_id"] = (str(currentDriverList[currentPairdDriverId]['_id']))
                     currentPairdRestaurent['orderId'] = str(D['_id'])
@@ -104,9 +102,7 @@ class RMDP:
                     if self.Postponement(P_hat, D, self.maxLengthPost, self.t_Pmax):
                         P_hat.append(D)
                     else:
-                        while (datetime.strptime(D['order_request_time'], '%d-%m-%Y %H:%M:%S') - datetime.strptime(
-                                P_hat[0]['order_request_time'], '%d-%m-%Y %H:%M:%S')) >= timedelta(minutes=self.t_Pmax):
-
+                        while (datetime.strptime(D['order_request_time'], '%d-%m-%Y %H:%M:%S') - datetime.strptime(P_hat[0]['order_request_time'], '%d-%m-%Y %H:%M:%S')) >= timedelta(minutes=self.t_Pmax):
                             PairdDriverId = self.FindVehicle(P_hat[0])
                             P_hat[0]['driver_id'] = str(currentDriverList[PairdDriverId]['_id'])
                             driverList[PairdDriverId]['Capacity'] += 1
@@ -120,15 +116,12 @@ class RMDP:
                                 break
                         if len(P_hat) >= self.maxLengthPost:
                             for pospondedOrder in P_hat:
-                                PairedRestaurent = copy.deepcopy(next(filter(lambda x: int(x['Restaurant_ID']) == int(
-                                    pospondedOrder["order_restaurant_carrier_restaurantId"]), restaurantList), None))
+                                PairedRestaurent = copy.deepcopy(next(filter(lambda x: int(x['Restaurant_ID']) == int(pospondedOrder["order_restaurant_carrier_restaurantId"]), restaurantList), None))
                                 PairdDriverId = self.FindVehicle(pospondedOrder, PairedRestaurent, currentDriverList)
                                 driverList[PairdDriverId]['Capacity'] += 1
                                 pospondedOrder['driver_id'] = driverList[PairdDriverId]['_id']
                                 PairedRestaurent['orderId'] = (pospondedOrder['_id'])
-                                currentDriverList[PairdDriverId]['Route'] = copy.deepcopy(
-                                    self.AssignOrder(pospondedOrder, currentDriverList[PairdDriverId],
-                                                     PairedRestaurent))
+                                currentDriverList[PairdDriverId]['Route'] = copy.deepcopy(self.AssignOrder(pospondedOrder, currentDriverList[PairdDriverId],PairedRestaurent))
                             P_hat.clear()
                         P_hat.append(D)
                 S = self.TotalDelay(driverList)
@@ -261,11 +254,7 @@ class RMDP:
                 targetRoute: list = next(
                     (driver for driver in self.Theta_x if str(driver.id) == str(currentPairedDriver.id)), [])
 
-                ans = list(filter(lambda x: (('restaurantId' in x) and
-                                             str(x['orderId']) != str(pospondedOrder['orderId'])) or (
-                                                    ('requestTime' not in x) and ('route' not in x) and str(
-                                                x['orderId']) !=
-                                                    str(pospondedOrder['orderId'])), targetRoute['route']))
+                ans = list(filter(lambda x: (('restaurantId' in x) and str(x['orderId']) != str(pospondedOrder['orderId'])) or (('requestTime' not in x) and ('route' not in x) and str(x['orderId']) != str(pospondedOrder['orderId'])), targetRoute['route']))
                 targetRoute['route'] = copy.deepcopy(ans[:])
         except Exception as e:
             logging.critical(e, exc_info=True)
