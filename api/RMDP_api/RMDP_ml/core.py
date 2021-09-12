@@ -7,6 +7,9 @@ from pymongo import MongoClient
 import itertools
 import math
 import threading
+import logging
+from concurrent.futures import ThreadPoolExecutor
+from operator import attrgetter
 
 
 class Singleton(object):
@@ -30,7 +33,8 @@ class RMDP:
 
     def __init__(self):
         self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
-        print(int(os.environ['DEBUG']) == 1)
+        # self.DEBUG = True
+        # print(int(os.environ['DEBUG']) == 1)
         self.Order_num = 2
         self.Delta_S = 0
         self.time_buffer = 0
@@ -55,37 +59,42 @@ class RMDP:
 
     def generateThread(self):
         cityList = list(self.all_citiesCollection.find())
-        threads = []
-        for i in range(len(cityList)):
-            threads.append(threading.Thread(target=self.runRMDP, args=(cityList[i]['Country_Code'],)))
-            threads[i].start()
-        for i in range(len(cityList)):
-            threads[i].join()
+        totalCurrentWorker = 2
+        logging.info("start generating")
+        with ThreadPoolExecutor(max_workers=totalCurrentWorker) as executor:
+            threads = []
+            # executor.map(self,range(len(len(cityList))))
+            for i in range(len(cityList)):
+                threads.append(executor.submit(self.runRMDP, index=i, cityName=(cityList[i]['City'])))
+                # threads[i].start()
+            # for i in range(len(cityList)):
+            #     threads[i].join()
 
-    def runRMDP(self, cityCode):
+    def runRMDP(self, index, cityName):
         try:
-
-            restaurantList = list(self.restaurantCollection.find({"Country_Code": cityCode}))
-            driverList = list(self.driverCollection.find({"Country_Code": cityCode}))
-            filterrestTaurantCode = list(map(lambda x: x['Restaurant_ID'], restaurantList))
-            unAssignOrder = list(self.orderCollection.find(
-                {"order_status": "unasgined", "order_restaurant_carrier_restaurantId": {"$in": filterrestTaurantCode}}))
-            postponedOrder = list(self.orderCollection.find(
-                {"order_status": "watting", "order_restaurant_carrier_restaurantId": {"$in": filterrestTaurantCode}}))
+            print("currentThread:", index)
+            restaurantList = list(self.restaurantCollection.find({"City": cityName}))
+            driverList = list(self.driverCollection.find({"City": cityName}))
+            filterrestTaurantCode = list(map(lambda x: int(x['Restaurant_ID']), restaurantList))
+            unAssignOrder = list(self.orderCollection.find({"$and": [{"order_status": "unasgined"}, {
+                "order_restaurant_carrier_restaurantId": {"$in": filterrestTaurantCode}}]}))
+            postponedOrder = list(self.orderCollection.find({"$and": [{"order_status": "watting"},
+                                                                      {"order_restaurant_carrier_restaurantId": {
+                                                                          "$in": filterrestTaurantCode}}]
+                                                             }))
             delay: float = float("inf")
             slack = 0
 
-            unassignedOrderPermutation = list(itertools.permutations(unAssignOrder))
-            for permutation in unassignedOrderPermutation:
+            for permutation in itertools.permutations(unAssignOrder):
                 Theta_hat = copy.deepcopy(driverList)  # Candidate route plan
                 P_hat = copy.deepcopy(postponedOrder)
 
                 for D in permutation:
-                    currentPairdDriver = self.FindVehicle(D)
+                    currentPairdRestaurent = next(
+                        filter(lambda x: int(x['Restaurant_ID']) == int(D["order_restaurant_carrier_restaurantId"]),
+                               restaurantList), None)
+                    currentPairdDriver = self.FindVehicle(D, currentPairdRestaurent, driverList)
                     D["driverId"] = (str(currentPairdDriver.id))
-                    currentPairdRestaurentList = list(
-                        filter(lambda x: str(x.id) == D["restaurantId"], self.restaurantlist))
-                    currentPairdRestaurent = currentPairdRestaurentList[0].to_mongo().to_dict()
 
                     currentPairdRestaurent['orderId'] = str(D['orderId'])
                     currentPairdDriver.capacity += 1
@@ -98,7 +107,7 @@ class RMDP:
                             PairdDriver = self.FindVehicle(P_hat[0])
                             P_hat[0].setDriverId(PairdDriver.get_id())
                             PairdDriver.setCurrentCapacity(PairdDriver.getCurrentCapacity() + 1)
-                            PairedRestaurent = copy.deepcopy(self.restaurantList[P_hat[0].getRestaurantId() - 1])
+                            PairedRestaurent = copy.deepcopy(restaurantList[P_hat[0].getRestaurantId() - 1])
                             PairedRestaurent.setOrderId(D.getId())
 
                             self.AssignOrder(Theta_hat, P_hat[0], PairdDriver, PairedRestaurent)
@@ -113,7 +122,7 @@ class RMDP:
                                 PairdDriver.setCurrentCapacity(PairdDriver.getCurrentCapacity() + 1)
                                 pospondedOrder.setDriverId(PairdDriver.get_id())
                                 PairedRestaurent = copy.deepcopy(
-                                    self.restaurantList[pospondedOrder.getRestaurantId() - 1])
+                                    restaurantList[pospondedOrder.getRestaurantId() - 1])
                                 PairedRestaurent.setOrderId(pospondedOrder.getId())
                                 self.AssignOrder(Theta_hat, pospondedOrder, PairdDriver, PairedRestaurent)
                             P_hat.clear()
@@ -123,14 +132,15 @@ class RMDP:
                 if (S < delay) or ((S == delay) and (currentSlack < slack)):
                     slack = currentSlack
                     delay = S
-                    self.Theta_x = copy.deepcopy(Theta_hat)
-                    self.P_x = copy.deepcopy(P_hat)
+                    Theta_x = copy.deepcopy(Theta_hat)
+                    P_x = copy.deepcopy(P_hat)
             # print(self.Theta_x)
             # print(self.P_x)
             self.Remove()
             self.updateValue()
-        except ValueError:
-            print(ValueError)
+            print("Thread:", index, " is finished")
+        except Exception as e:
+            logging.critical(e, exc_info=True)
 
     def deltaSDelay(self, driver):
         try:
@@ -154,8 +164,8 @@ class RMDP:
                     timeDelay = timeDeadline - timeComplete
                     delay = max(0, timeDelay.days + timeDelay.total_seconds())
             return delay
-        except ValueError:
-            print(ValueError)
+        except Exception as e:
+            logging.critical(e, exc_info=True)
 
     def AssignOrder(self, Theta_hat, order, pairedDriver, currentParedRestaurent):
         currentDriver: list = next((driver for driver in Theta_hat if driver.id == pairedDriver.id), [])
@@ -194,24 +204,32 @@ class RMDP:
         return totalSlack
 
     def tripTime(self, driv, res, order):
-        disDriver2Res = self.distance(float(driv.latitude), float(driv.longitude), float(res.latitude),
-                                      float(res.longitude))
-        Res2Delivery = self.distance(float(res.latitude), float(res.longitude), float(order['latitude']),
-                                     float(order['longitude']))
-        return (disDriver2Res + Res2Delivery) / float(self.velocity)
+        try:
+            disDriver2Res = self.distance(float(driv['Latitude']), float(driv['Longitude']), float(res['Latitude']),
+                                          float(res['Longitude']))
+            Res2Delivery = self.distance(float(res['Latitude']), float(res['Longitude']),
+                                         float(order['order_customer_Latitude']),
+                                         float(order['order_customer_Longitude']))
+            return float(disDriver2Res + Res2Delivery / float(self.velocity))
+        except Exception as e:
+            logging.critical(e, exc_info=True)
 
-    def FindVehicle(self, Order):
-        OrderRestaurantList = list(filter(lambda x: str(x.id) == str(Order['restaurantId']), self.restaurantlist))
-        OrderRestaurant = OrderRestaurantList[0]
-        minTimeDriver = self.vehicleList[0]
-        minTimeTolTal = float('inf')
-        handleDriver = [driver for driver in self.vehicleList if driver.capacity < self.capacity]
-        for currentDriver in handleDriver:
-            currenTripTime = self.tripTime(currentDriver, OrderRestaurant, Order)
-            if currenTripTime < minTimeTolTal:
-                minTimeDriver = copy.deepcopy(currentDriver)
-                minTimeTolTal = currenTripTime
-        return minTimeDriver
+    def FindVehicle(self, Order, OrderRestaurant, driverList):
+        try:
+            minTimeDriver = driverList[0]
+            minTimeTolTal = float('inf')
+            # handleDriver = [driver for driver in self.driverList if driver.Capacity < self.Capacity]
+            handleDriver = list(filter(lambda driver: int(driver['Capacity']) < int(self.capacity), driverList))
+            for currentDriver in handleDriver:
+                currenTripTime = self.tripTime(currentDriver, OrderRestaurant, Order)
+                if currenTripTime < minTimeTolTal:
+                    minTimeDriver = copy.deepcopy(currentDriver)
+                    minTimeTolTal = currenTripTime
+
+            alternative = driverList.index(min(driverList, key=lambda i: self.tripTime(driverList[i], OrderRestaurant, Order)))
+            return minTimeDriver
+        except Exception as e:
+            logging.critical(e, exc_info=True)
 
     def slackDelay(self, driver):
         try:
@@ -230,44 +248,58 @@ class RMDP:
                     delay = timedelta(seconds=tripTime) - timedelta(seconds=self.time_buffer) - deadLine
                     delay = max(0, delay.total_seconds())
             return delay
-        except ValueError:
-            print(ValueError)
+        except Exception as e:
+            logging.critical(e, exc_info=True)
 
     def TotalDelay(self, theta_Hat: list):
-        totalSlack: int = 0
-        for routePerVehicle in theta_Hat:
-            totalSlack += self.deltaSDelay(routePerVehicle)
-        return totalSlack
+        try:
+            totalSlack: int = 0
+            for routePerVehicle in theta_Hat:
+                totalSlack += self.deltaSDelay(routePerVehicle)
+            return totalSlack
+        except Exception as e:
+            logging.critical(e, exc_info=True)
 
     def Remove(self):
-        for pospondedOrder in self.P_x:
-            currentPairedDriverList = list(filter(lambda x: str(x.id) == str(pospondedOrder['driverId']), self.Theta_x))
-            currentPairedDriver = currentPairedDriverList[0]
-            targetRoute: list = next(
-                (driver for driver in self.Theta_x if str(driver.id) == str(currentPairedDriver.id)), [])
+        try:
+            for pospondedOrder in self.P_x:
+                currentPairedDriverList = list(
+                    filter(lambda x: str(x.id) == str(pospondedOrder['driverId']), self.Theta_x))
+                currentPairedDriver = currentPairedDriverList[0]
+                targetRoute: list = next(
+                    (driver for driver in self.Theta_x if str(driver.id) == str(currentPairedDriver.id)), [])
 
-            ans = list(filter(lambda x: (('restaurantId' in x) and
-                                         str(x['orderId']) != str(pospondedOrder['orderId'])) or (
-                                                ('requestTime' not in x) and ('route' not in x) and str(x['orderId']) !=
-                                                str(pospondedOrder['orderId'])), targetRoute['route']))
-            targetRoute['route'] = copy.deepcopy(ans[:])
+                ans = list(filter(lambda x: (('restaurantId' in x) and
+                                             str(x['orderId']) != str(pospondedOrder['orderId'])) or (
+                                                    ('requestTime' not in x) and ('route' not in x) and str(
+                                                x['orderId']) !=
+                                                    str(pospondedOrder['orderId'])), targetRoute['route']))
+                targetRoute['route'] = copy.deepcopy(ans[:])
+        except Exception as e:
+            logging.critical(e, exc_info=True)
 
     def Postponement(self, P_hat, D, p_max, t_Pmax):
-        if len(P_hat) == 0:  # if postponement set is empty
-            return True
-        elif len(P_hat) < self.maxLengthPost:  # if number of postponement <= max of postponement
-            if D.t - P_hat[0].t < t_Pmax:
+        try:
+            if len(P_hat) == 0:  # if postponement set is empty
                 return True
+            elif len(P_hat) < self.maxLengthPost:  # if number of postponement <= max of postponement
+                if D.t - P_hat[0].t < t_Pmax:
+                    return True
+                else:
+                    return False
             else:
                 return False
-        else:
-            return False
+        except Exception as e:
+            logging.critical(e, exc_info=True)
 
     def distance(self, lat1, lon1, lat2, lon2):
-        p = math.pi / 180
-        a = 0.5 - math.cos((lat2 - lat1) * p) / 2 + math.cos(lat1 * p) * math.cos(lat2 * p) * (
-                1 - math.cos((lon2 - lon1) * p)) / 2
-        return 12742 * math.asin(math.sqrt(a))  # 2*R*asin...
+        try:
+            p = math.pi / 180
+            a = 0.5 - math.cos((lat2 - lat1) * p) / 2 + math.cos(lat1 * p) * math.cos(lat2 * p) * (
+                    1 - math.cos((lon2 - lon1) * p)) / 2
+            return 12742 * math.asin(math.sqrt(a))  # 2*R*asin...
+        except Exception as e:
+            logging.critical(e, exc_info=True)
 
     def updateValue(self):
         try:
@@ -283,8 +315,8 @@ class RMDP:
                         'velocity': currentObject['velocity'],
                     }
                 }, upsert=False)
-        except ValueError:
-            print(ValueError)
+        except Exception as e:
+            logging.critical(e, exc_info=True)
 
     def updatePosponedOrder(self):
         for postpoendOrder in self.P_x:
@@ -296,8 +328,8 @@ class RMDP:
                         'order_status': 'watting'
                     }
                 }, upsert=False)
-            except ValueError:
-                print((ValueError))
+            except Exception as e:
+                logging.critical(e, exc_info=True)
 
     def updatePairdOrder(self):
         for pairedOrder in self.Theta_x:
@@ -306,8 +338,9 @@ class RMDP:
                 self.orderCollection.objects(id=currentObject.id).update(
                     order_status='processing'
                 )
-            except ValueError:
-                print(ValueError)
+            except Exception as e:
+                logging.critical(e, exc_info=True)
 
-# test = RMDP()
-# test.generateThread()
+
+test = RMDP()
+test.generateThread()

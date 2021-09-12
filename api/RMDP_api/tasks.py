@@ -3,6 +3,7 @@ from celery.utils.log import get_task_logger
 from django.core.management import call_command
 from .RMDP_ml.core import RMDP
 from .RMDP_ml.userSimulator import userSimulator
+
 logger = get_task_logger(__name__)
 
 
@@ -18,8 +19,9 @@ def send_email_report():
 
 @shared_task
 def run_RMDP():
-    call_command("run RMDP", )
-    RMDP.runRMDP()
+    currentTask = RMDP()
+    currentTask.generateThread()
+
 
 @shared_task
 def generatingOrder():

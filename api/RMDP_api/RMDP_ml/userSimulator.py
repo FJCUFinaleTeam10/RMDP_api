@@ -30,7 +30,7 @@ class userSimulator:
 
     def __init__(self):
         self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
-        print(int(os.environ['DEBUG']) == 1)
+        # self.DEBUG = True
         self.client = MongoClient(mongoClientUrl(self.DEBUG))
         self.databaseName = self.client["RMDP"]
         self.restaurantCollection = self.databaseName["restaurant"]

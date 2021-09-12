@@ -2,7 +2,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 from mongoengine import connect
-import RMDP_api.tasks
+from RMDP_api import tasks
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
@@ -10,10 +10,9 @@ SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--0i%4e9*vbbj&g+w&i-lfanunw_899j@k8c7d0@mq#p)qdbs5n'
-
+SECRET_KEY = "asdfasdfasdf"
+DEBUG = True
 DEBUG = False if int(os.environ['DEBUG']) == 1 else True
-print(int(os.environ['DEBUG']) == 1)
 
 
 def mongoClientUrl(DEBUG):
@@ -137,24 +136,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CELERY_BROKER_URL = DEBUG and "redis://localhost:6379" or "redis://redis:6379"
 CELERY_RESULT_BACKEND = DEBUG and "redis://localhost:6379" or "redis://redis:6379"
 CELERY_BEAT_SCHEDULE = {
-    # "sample_task": {
-    #     "task": "RMDP_api.tasks.sample_task",
-    #     "schedule": timedelta(seconds=1),
-    # },
-    # "send_email_report": {
-    #     "task": "RMDP_api.tasks.send_email_report",
-    #     "schedule": timedelta(seconds=1),
-    # },
-    # "RMDP": {
+    # "run_RMDP": {
     #     "task": "RMDP_api.tasks.run_RMDP",
     #     "schedule": timedelta(seconds=30),
     # },
     "generatingOrder": {
         "task": "RMDP_api.tasks.generatingOrder",
-        "schedule": timedelta(seconds=10),
+        "schedule": timedelta(seconds=15),
     },
 }
-
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-DEFAULT_FROM_EMAIL = "noreply@email.com"
-ADMINS = [("testuser", "test.user@email.com"), ]
