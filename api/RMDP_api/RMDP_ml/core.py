@@ -3,6 +3,8 @@ import copy
 # from Math.Geometry import interSectionCircleAndLine
 import os
 from datetime import datetime, timedelta
+from functools import reduce
+
 from pymongo import MongoClient
 import itertools
 import math
@@ -32,8 +34,8 @@ class RMDP:
     _instance = None
 
     def __init__(self):
-        self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
-        #self.DEBUG = True
+        # self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
+        self.DEBUG = True
         # print(int(os.environ['DEBUG']) == 1)
         self.Order_num = 2
         self.Delta_S = 0
@@ -63,12 +65,8 @@ class RMDP:
         logging.info("start generating")
         with ThreadPoolExecutor(max_workers=totalCurrentWorker) as executor:
             threads = []
-            # executor.map(self,range(len(len(cityList))))
             for i in range(len(cityList)):
                 threads.append(executor.submit(self.runRMDP, index=i, cityName=(cityList[i]['City'])))
-                # threads[i].start()
-            # for i in range(len(cityList)):
-            #     threads[i].join()
 
     def runRMDP(self, index, cityName):
         try:
@@ -82,62 +80,64 @@ class RMDP:
                                                                       {"order_restaurant_carrier_restaurantId": {
                                                                           "$in": filterrestTaurantCode}}]
                                                              }))
+            if self.maxLengthPost <= len(unAssignOrder):
+                self.maxLengthPost = len(unAssignOrder) + 1
+                logging.info("upgrade maxLengPostTo:", len(unAssignOrder) + 1)
             delay: float = float("inf")
             slack = 0
 
             for permutation in itertools.permutations(unAssignOrder):
-                Theta_hat = copy.deepcopy(driverList)  # Candidate route plan
+
+                currentDriverList = copy.deepcopy(driverList)
                 P_hat = copy.deepcopy(postponedOrder)
 
                 for D in permutation:
                     currentPairdRestaurent = next(
                         filter(lambda x: int(x['Restaurant_ID']) == int(D["order_restaurant_carrier_restaurantId"]),
                                restaurantList), None)
-                    currentPairdDriverId = self.FindVehicle(D, currentPairdRestaurent, driverList)
-                    D["driver_id"] = (str(driverList[currentPairdDriverId]['_id']))
+                    currentPairdDriverId = self.FindVehicle(D, currentPairdRestaurent, currentDriverList)
+                    D["driver_id"] = (str(currentDriverList[currentPairdDriverId]['_id']))
                     currentPairdRestaurent['orderId'] = str(D['_id'])
-                    driverList[currentPairdDriverId]['Capacity'] += 1
-                    driverList[currentPairdDriverId]['Route'] = copy.deepcopy(
-                        self.AssignOrder(D, driverList[currentPairdDriverId], currentPairdRestaurent))
+                    currentDriverList[currentPairdDriverId]['Capacity'] += 1
+                    currentDriverList[currentPairdDriverId]['Route'] = copy.deepcopy(
+                        self.AssignOrder(D, currentDriverList[currentPairdDriverId], currentPairdRestaurent))
                     if self.Postponement(P_hat, D, self.maxLengthPost, self.t_Pmax):
-                        if D not in P_hat:
-                            P_hat.append(D)
+                        P_hat.append(D)
                     else:
                         while (datetime.strptime(D['order_request_time'], '%d-%m-%Y %H:%M:%S') - datetime.strptime(
                                 P_hat[0]['order_request_time'], '%d-%m-%Y %H:%M:%S')) >= timedelta(minutes=self.t_Pmax):
 
                             PairdDriverId = self.FindVehicle(P_hat[0])
-                            P_hat[0]['driver_id'] = str(driverList[PairdDriverId]['_id'])
+                            P_hat[0]['driver_id'] = str(currentDriverList[PairdDriverId]['_id'])
                             driverList[PairdDriverId]['Capacity'] += 1
                             PairedRestaurent = copy.deepcopy(next(filter(lambda x: int(x['Restaurant_ID']) == int(
                                 pospondedOrder["order_restaurant_carrier_restaurantId"]), restaurantList), None))
                             PairedRestaurent['orderId'] = str(P_hat[0]['_id'])
                             driverList[PairdDriverId]['Route'] = copy.deepcopy(
-                                self.AssignOrder(P_hat[0], driverList[PairdDriverId], PairedRestaurent))
+                                self.AssignOrder(P_hat[0], currentDriverList[PairdDriverId], PairedRestaurent))
                             P_hat.pop(0)
                             if len(P_hat) == 0:
                                 break
                         if len(P_hat) >= self.maxLengthPost:
                             for pospondedOrder in P_hat:
-                                PairdDriverId = self.FindVehicle(pospondedOrder)
+                                PairedRestaurent = copy.deepcopy(next(filter(lambda x: int(x['Restaurant_ID']) == int(
+                                    pospondedOrder["order_restaurant_carrier_restaurantId"]), restaurantList), None))
+                                PairdDriverId = self.FindVehicle(pospondedOrder, PairedRestaurent, currentDriverList)
                                 driverList[PairdDriverId]['Capacity'] += 1
                                 pospondedOrder['driver_id'] = driverList[PairdDriverId]['_id']
-                                PairedRestaurent = copy.deepcopy(next(
-                                    filter(lambda x: int(x['Restaurant_ID']) == int(
-                                        pospondedOrder["order_restaurant_carrier_restaurantId"]),
-                                           restaurantList), None))
                                 PairedRestaurent['orderId'] = (pospondedOrder['_id'])
-                                driverList[PairdDriverId]['Route'] = copy.deepcopy(
-                                    self.AssignOrder(pospondedOrder, driverList[PairdDriverId], PairedRestaurent))
+                                currentDriverList[PairdDriverId]['Route'] = copy.deepcopy(
+                                    self.AssignOrder(pospondedOrder, currentDriverList[PairdDriverId],
+                                                     PairedRestaurent))
                             P_hat.clear()
                         P_hat.append(D)
-                S = self.TotalDelay(Theta_hat)
-                currentSlack = self.Slack(Theta_hat)
+                S = self.TotalDelay(driverList)
+                currentSlack = self.Slack(driverList)
                 if (S < delay) or ((S == delay) and (currentSlack < slack)):
                     slack = currentSlack
                     delay = S
-                    Theta_x = copy.deepcopy(Theta_hat)
-                    P_x = copy.deepcopy(P_hat)
+                    driverList = copy.deepcopy(currentDriverList)
+                    postponedOrder = copy.deepcopy(P_hat)
             self.Remove()
             self.updateValue()
             print("Thread:", index, " is finished")
@@ -157,15 +157,15 @@ class RMDP:
                 currentDistance = self.distance(float(previousNode['Latitude']), float(previousNode['Longitude']),
                                                 float(currentNode['Latitude']), float(currentNode['Longitude']))
                 tripTime += currentDistance / self.velocity
-                if 'restaurantId' in currentNode:
-                    deadlineTime = self.deadlineTime
+                if 'order_request_time' in currentNode:
+                    deadlineTime = timedelta(seconds=self.deadlineTime)
                     timeComplete = timedelta(seconds=tripTime) + timedelta(
                         minutes=self.time_buffer) + datetime.now() + timedelta(hours=8)
-                    timeDeadline = datetime.strptime(currentNode['requestTime'], "%d-%m-%Y %H:%M:%S") + timedelta(
-                        minutes=deadlineTime)
-                    timeDelay = timeDeadline - timeComplete
-                    delay = max(0, timeDelay.days + timeDelay.total_seconds())
-            return delay
+                    timeDeadline = datetime.strptime(currentNode['order_request_time'],
+                                                     "%d-%m-%Y %H:%M:%S") + deadlineTime
+                    timeDelay = timeComplete - timeDeadline
+                    delay += timeDelay.total_seconds()
+            return max(0, delay)
         except Exception as e:
             logging.critical(e, exc_info=True)
 
@@ -201,18 +201,15 @@ class RMDP:
     # main function
 
     def Slack(self, Theta_hat):
-        totalSlack: int = 0
-        for routePerVehicle in Theta_hat:
-            totalSlack += self.slackDelay(routePerVehicle)
-        return totalSlack
+        return reduce(lambda x, y: self.slackDelay(x) + self.slackDelay(y), Theta_hat, 0.0)
 
     def tripTime(self, driv, res, order):
         try:
             disDriver2Res = self.distance(float(driv['Latitude']), float(driv['Longitude']), float(res['Latitude']),
                                           float(res['Longitude']))
             Res2Delivery = self.distance(float(res['Latitude']), float(res['Longitude']),
-                                         float(order['order_customer_Latitude']),
-                                         float(order['order_customer_Longitude']))
+                                         float(order['Latitude']),
+                                         float(order['Longitude']))
             return float(disDriver2Res + Res2Delivery / float(self.velocity))
         except Exception as e:
             logging.critical(e, exc_info=True)
@@ -240,13 +237,13 @@ class RMDP:
                 if 'restaurantId' in currentRoute[i]:
                     deadLine = datetime.strptime(currentRoute[i]['deadLineTime'],
                                                  "%d-%m-%Y %H:%M:%S") - datetime.now() + timedelta(hours=8)
-                    delay = timedelta(seconds=tripTime) - timedelta(seconds=self.time_buffer) - deadLine
-                    delay = max(0, delay.total_seconds())
+                    delayTime = timedelta(seconds=tripTime) - timedelta(seconds=self.time_buffer) - deadLine
+                    delay += max(0, delayTime.total_seconds())
             return delay
         except Exception as e:
             logging.critical(e, exc_info=True)
 
-    def TotalDelay(self, theta_Hat: list):
+    def TotalDelay(self, theta_Hat):
         try:
             totalSlack: int = 0
             for routePerVehicle in theta_Hat:
