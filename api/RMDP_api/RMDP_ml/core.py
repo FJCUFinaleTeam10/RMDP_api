@@ -33,7 +33,7 @@ class RMDP:
 
     def __init__(self):
         self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
-        # self.DEBUG = True
+        #self.DEBUG = True
         # print(int(os.environ['DEBUG']) == 1)
         self.Order_num = 2
         self.Delta_S = 0
