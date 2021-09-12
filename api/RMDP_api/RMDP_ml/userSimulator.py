@@ -57,8 +57,8 @@ class userSimulator:
                 self.restaurantCollection.find({"City": currentCity['City']}, {'Restaurant_ID': 1}))
             self.orderCollection.insert({
                 'order_approved_at': None,
-                'order_customer_Longitude': generatedLocation[1],
-                'order_customer_Latitude': generatedLocation[0],
+                'Longitude': generatedLocation[1],
+                'Latitude': generatedLocation[0],
                 'order_delivered_customer_date': None,
                 'order_request_time': datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
                 'order_restaurant_carrier_date': None,
