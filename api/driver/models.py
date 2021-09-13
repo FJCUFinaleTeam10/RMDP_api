@@ -10,5 +10,8 @@ class driver(Document):
     Longitude = FloatField()
     Route = ListField()
     Velocity = IntField()
+    Driver_ID= StringField()
+    Route = ListField()
+    lastModified = DateField()
 
 

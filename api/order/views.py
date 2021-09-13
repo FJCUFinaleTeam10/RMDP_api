@@ -1,8 +1,12 @@
+import logging
+
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from rest_framework.decorators import api_view
 from .models import order
 from .serializers import OrderSerializer
 from mongoengine.base import get_document as get_model
+
+
 # Create your views here.
 @api_view(['GET'])
 def listAll(request):
@@ -47,11 +51,15 @@ def getOrder(request):
 
 @api_view(['POST'])
 def getOrderBaseOnCity(request):
-    cityName = request.data['params']['city']
-    restaurant = get_model('restaurant')
-    filteredCityList = restaurant.objects(City=cityName).values_list('id')
-    orderList = order.objects(cityName in filteredCityList)
-    result = OrderSerializer(orderList, many=True)
-    response = JsonResponse(result.data, safe=False)
-    response["Access-Control-Allow-Origin"] = "*"
-    return response
+    try:
+        cityName = request.data['params']['city']
+        restaurant = get_model('restaurant')
+        filteredCityList = list(restaurant.objects(City=cityName).values_list('Restaurant_ID'))
+
+        orderList = order.objects(order_restaurant_carrier_restaurantId__in=filteredCityList)
+        result = OrderSerializer(orderList, many=True)
+        response = JsonResponse(result.data, safe=False)
+        response["Access-Control-Allow-Origin"] = "*"
+        return response
+    except Exception as e:
+        logging.ERROR

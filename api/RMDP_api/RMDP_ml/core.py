@@ -345,5 +345,3 @@ class RMDP:
         except Exception as e:
             logging.critical(e, exc_info=True)
 
-test = RMDP()
-test.generateThread()
