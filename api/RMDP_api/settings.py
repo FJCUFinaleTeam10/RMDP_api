@@ -134,12 +134,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CELERY_BROKER_URL = DEBUG and "redis://localhost:6379" or "redis://redis:6379"
 CELERY_RESULT_BACKEND = DEBUG and "redis://localhost:6379" or "redis://redis:6379"
 CELERY_BEAT_SCHEDULE = {
-    # "run_RMDP": {
-    #     "task": "RMDP_api.tasks.run_RMDP",
-    #     "schedule": timedelta(seconds=30),
-    # },
+    "run_RMDP": {
+        "task": "RMDP_api.tasks.run_RMDP",
+        "schedule": timedelta(seconds=15),
+    },
     "generatingOrder": {
         "task": "RMDP_api.tasks.generatingOrder",
         "schedule": timedelta(seconds=15),
     },
+    # "driverSimulator": {
+    #     "task": "RMDP_api.tasks.generatingOrder",
+    #     "schedule": timedelta(seconds=15),
+    # },
 }
