@@ -48,9 +48,9 @@ class RMDP:
             driverList = self.DBclient.getDriverBaseOnCity(cityName)
             filterrestTaurantCode = list(map(lambda x: int(x['Restaurant_ID']), restaurantList))
 
-            unAssignOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "unasgined")
+            unAssignOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "unassigned")
 
-            postponedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "watting")
+            postponedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "waiting")
 
             for order in unAssignOrder: order['order_request_time'] = datetime.strptime(order['order_request_time'],
                                                                                         '%d-%m-%Y %H:%M:%S')
@@ -70,9 +70,9 @@ class RMDP:
                 P_hat = copy.deepcopy(postponedOrder)
                 currentPairdOrder = copy.deepcopy(pairdOrder)
                 for D in permutation:
-                    currentPairdRestaurent = next(
-                        filter(lambda x: int(x['Restaurant_ID']) == int(D["order_restaurant_carrier_restaurantId"]),
-                               restaurantList), None)
+                    currentPairdRestaurent = next(restaurant for restaurant in restaurantList if
+                                                  restaurant['Restaurant_ID'] == D[
+                                                      "order_restaurant_carrier_restaurantId"])
                     currentPairdDriverId = self.FindVehicle(D, currentPairdRestaurent, currentDriverList)
                     D["driver_id"] = currentDriverList[currentPairdDriverId]['Driver_ID']
                     currentDriverList[currentPairdDriverId]['Capacity'] += 1
@@ -86,9 +86,10 @@ class RMDP:
                             P_hat.append(D)
                         else:
                             while (D['order_request_time'] - P_hat[0]['order_request_time']) >= self.t_Pmax:
-                                PairedRestaurent = copy.deepcopy(next(filter(
-                                    lambda x: x['Restaurant_ID'] == P_hat[0]["order_restaurant_carrier_restaurantId"],
-                                    restaurantList), None))
+                                PairedRestaurent = copy.deepcopy(next(restaurant for restaurant in restaurantList if
+                                                                      restaurant['Restaurant_ID'] == P_hat[0][
+                                                                          "order_restaurant_carrier_restaurantId"]
+                                                                      ))
                                 PairdDriverId = self.FindVehicle(P_hat[0], PairedRestaurent, driverList)
                                 P_hat[0]['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
                                 driverList[PairdDriverId]['Capacity'] += 1
@@ -100,10 +101,10 @@ class RMDP:
                                     break
                             if len(P_hat) >= maxLengthPost:
                                 for order in P_hat:
-                                    PairedRestaurent = copy.deepcopy(
-                                        next(filter(lambda x: int(x['Restaurant_ID']) == int(
-                                            order["order_restaurant_carrier_restaurantId"]), restaurantList),
-                                             None))
+                                    PairedRestaurent = copy.deepcopy(next(
+                                        restaurant for restaurant in restaurantList if
+                                        int(restaurant['Restaurant_ID']) == int(
+                                            order["order_restaurant_carrier_restaurantId"])))
                                     PairdDriverId = self.FindVehicle(order, PairedRestaurent,
                                                                      currentDriverList)
                                     currentDriverList[PairdDriverId]['Capacity'] += 1
@@ -125,7 +126,7 @@ class RMDP:
                     pairdOrder = copy.deepcopy(currentPairdOrder)
             for order in postponedOrder:
                 currentPairedDriver = next(
-                    filter(lambda driver: str(driver['Driver_ID']) == str(order['driver_id']), driverList))
+                    driver for driver in driverList if str(driver['Driver_ID']) == str(order['driver_id']))
                 currentPairedDriverId = driverList.index(
                     currentPairedDriver) if currentPairedDriver in driverList else -1
                 driverList[currentPairedDriverId]['Route'] = copy.deepcopy(list(filter(
@@ -133,7 +134,7 @@ class RMDP:
                             int(x['nodeType']) == 1 and str(x['Order_ID']) != str(order['Order_ID'])),
                     driverList[currentPairedDriverId]['Route'])))
 
-            self.updateOrder(driverList)
+            self.updateDriver(driverList)
             self.updatePosponedOrder(postponedOrder)
             self.updatePairdOrder(pairdOrder)
             print("Thread:", index, " is finished")
@@ -262,10 +263,11 @@ class RMDP:
         except Exception as e:
             logging.critical(e, exc_info=True)
 
-    def updateOrder(self, driverList):
+    def updateDriver(self, driverList):
         try:
             for driver in list(filter(lambda driver: len(driver['Route']) > 0, driverList)):
-                self.DBclient.updateDriver(driver,self.velocity)
+                driver['Velocity'] = self.velocity
+                self.DBclient.updateDriver(driver)
         except Exception as e:
             logging.critical(e, exc_info=True)
 
@@ -273,17 +275,22 @@ class RMDP:
 
         for order in pospondList:
             try:
-                self.DBclient.updatePosponedOrder(order)
+                order['order_status'] = 'waiting'
+                self.DBclient.updateOrder(order)
             except Exception as e:
                 logging.critical(e, exc_info=True)
 
     def updatePairdOrder(self, pairedOrderList):
         try:
-            for pairedOrder in pairedOrderList:
-                self.DBclient.updatePairdOrder(pairedOrder)
+            for order in pairedOrderList:
+                order['order_status'] = 'headToRes'
+                order['order_approved_at'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                order['order_estimated_delivery_date'] = (datetime.now() + self.deadlineTime).strftime(
+                    "%d-%m-%Y %H:%M:%S")
+                self.DBclient.updateOrder(order)
         except Exception as e:
             logging.critical(e, exc_info=True)
 
 
-TEST = RMDP()
-TEST.generateThread()
+test = RMDP()
+test.generateThread()

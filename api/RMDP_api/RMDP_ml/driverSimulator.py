@@ -5,6 +5,8 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 
 # from Math import Geometry
+
+
 from Database_Operator.Mongo_Operator import Mongo_Operate
 from Math import Geometry
 
@@ -67,6 +69,3 @@ class driverSimulator:
         except Exception as e:
             logging.critical(e, exc_info=True)
 
-
-test = driverSimulator()
-test.generateThread()

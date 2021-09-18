@@ -28,6 +28,7 @@ class Q_learning:
         self.min_epsilon = 0.01            # Minimum exploration probability
         self.decay_rate = 0.005            # Exponential decay rate for exploration prob
         self.nearBY = 5                    # most nearby agent
+
         self.agentPosition = []
         self.agentPosition_index = []
         self.capacity = 5
