@@ -29,7 +29,7 @@ class RMDP:
 
     def __init__(self):
         self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
-        # self.DEBUG = True
+        #self.DEBUG = True
         # print(int(os.environ['DEBUG']) == 1)
         self.Delta_S = 0
         self.time_buffer = timedelta(minutes=0)
