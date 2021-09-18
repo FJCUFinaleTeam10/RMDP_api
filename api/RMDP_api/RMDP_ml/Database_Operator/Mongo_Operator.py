@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 
 from bson import ObjectId
@@ -87,7 +87,7 @@ class Mongo_Operate:
                 },
                 {
                     "$set": {
-                        "order_restaurant_carrier_date": datetime.datetime.now().strftime('%d-%m-%Y %H:%M:%S'),
+                        "order_restaurant_carrier_date": datetime.now().strftime('%d-%m-%Y %H:%M:%S'),
                         "order_status": "headToCus"
                     }
                 }
@@ -105,7 +105,7 @@ class Mongo_Operate:
                 },
                 {
                     "$set": {
-                        "order_delivered_customer_date": datetime.datetime.now().strftime('%d-%m-%Y %H:%M:%S'),
+                        "order_delivered_customer_date": datetime.now().strftime('%d-%m-%Y %H:%M:%S'),
                         "order_status": "delivered"
                     }
 
@@ -116,22 +116,6 @@ class Mongo_Operate:
         except PyMongoError as py_mongo_error:
             logging.critical(py_mongo_error, exc_info=True)
 
-    def updateDriver(self, driver):
-        try:
-            self.driverCollection.update_one(
-                {
-                    'Driver_ID': driver['Driver_ID']
-                },
-                {
-                    "$set": {
-                        "Latitude": driver['Latitude'],
-                        'Longitude': driver['Longitude'],
-                        'Route': driver['Route'],
-                        'Capacity': driver['Capacity']
-                    }
-
-                }
-            )
         except Exception as e:
             logging.critical(e, exc_info=True)
 
@@ -150,14 +134,14 @@ class Mongo_Operate:
         except PyMongoError as py_mongo_error:
             logging.critical(py_mongo_error, exc_info=True)
 
-    def updateDriver(self, driver):
+    def updateDriver(self, driver,Velocity):
         try:
             self.driverCollection.update_one({
                 'Driver_ID': driver['Driver_ID']
             }, {
                 "$set": {
                     'Capacity': driver['Capacity'],
-                    'Velocity': driver['Velocity'],
+                    'Velocity': Velocity,
                     'Route': driver['Route'],
                 },
                 "$currentDate": {

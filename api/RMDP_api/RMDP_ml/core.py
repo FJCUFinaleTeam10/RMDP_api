@@ -265,7 +265,7 @@ class RMDP:
     def updateOrder(self, driverList):
         try:
             for driver in list(filter(lambda driver: len(driver['Route']) > 0, driverList)):
-                self.DBclient.updateDriver(driver)
+                self.DBclient.updateDriver(driver,self.velocity)
         except Exception as e:
             logging.critical(e, exc_info=True)
 
@@ -285,4 +285,5 @@ class RMDP:
             logging.critical(e, exc_info=True)
 
 
-
+TEST = RMDP()
+TEST.generateThread()

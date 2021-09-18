@@ -5,8 +5,8 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 
 # from Math import Geometry
-from .Database_Operator.Mongo_Operator import Mongo_Operate
-from .Math import Geometry
+from Database_Operator.Mongo_Operator import Mongo_Operate
+from Math import Geometry
 
 
 class driverSimulator:
@@ -40,13 +40,7 @@ class driverSimulator:
                                                            targetDestination['Latitude'],
                                                            targetDestination['Longitude'])
                     DistanceTraveled = currentDriver['Velocity'] * self.updateTime
-                    updatedLon, updatedLat = Geometry.interSectionCircleAndLine(currentDriver['Longitude'],
-                                                                                currentDriver['Latitude'],
-                                                                                DistanceTraveled,
-                                                                                currentDriver['Longitude'],
-                                                                                currentDriver['Latitude'],
-                                                                                targetDestination['Longitude'],
-                                                                                targetDestination['Latitude'])
+
                     if DistanceTraveled > DistanceRemain:
                         currentDriver['Latitude'] = targetDestination['Latitude']
                         currentDriver['Longitude'] = targetDestination['Longitude']
@@ -60,8 +54,19 @@ class driverSimulator:
                         if currentDriver['Route'] is None:
                             currentDriver['Velocity'] = 0
                     else:
+                        updatedLon, updatedLat = Geometry.interSectionCircleAndLine(currentDriver['Longitude'],
+                                                                                    currentDriver['Latitude'],
+                                                                                    DistanceTraveled,
+                                                                                    currentDriver['Longitude'],
+                                                                                    currentDriver['Latitude'],
+                                                                                    targetDestination['Longitude'],
+                                                                                    targetDestination['Latitude'])
                         currentDriver['Latitude'] = updatedLon
                         currentDriver['Longitude'] = updatedLat
-                    self.DBclient.updateDriver(currentDriver)
+                    self.DBclient.updateDriver(currentDriver,currentDriver['Velocity'])
         except Exception as e:
             logging.critical(e, exc_info=True)
+
+
+test = driverSimulator()
+test.generateThread()

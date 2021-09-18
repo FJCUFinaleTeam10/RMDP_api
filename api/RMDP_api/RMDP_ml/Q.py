@@ -1,11 +1,8 @@
 import numpy as np
 import random
 import math
-from Math.distance import distance
+from Math import distance
 from generatingData import generateTestData
-from model.driver import driver
-from model.order import Ds
-from model.restaurant import restaurant
 
 
 class Q_learning:
