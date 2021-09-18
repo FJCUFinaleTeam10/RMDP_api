@@ -20,7 +20,6 @@ def mongoClientUrl(DEBUG):
     else:
         return "mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin"
 
-
 connect("example-project", host=mongoClientUrl(DEBUG))
 
 INSTALLED_APPS = [
@@ -142,8 +141,8 @@ CELERY_BEAT_SCHEDULE = {
         "task": "RMDP_api.tasks.generatingOrder",
         "schedule": timedelta(seconds=15),
     },
-    "driverSimulator": {
-        "task": "RMDP_api.tasks.updateDriver",
-        "schedule": timedelta(seconds=1),
-    },
+    # "driverSimulator": {
+    #     "task": "RMDP_api.tasks.generatingOrder",
+    #     "schedule": timedelta(seconds=15),
+    # },
 }
