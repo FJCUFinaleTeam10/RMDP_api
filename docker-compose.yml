@@ -11,7 +11,9 @@ services:
       - DEBUG=1
       - SECRET_KEY=dbaa1_i7%*3r9-=z-+_mz4r-!qeed@(-a_r(g@k8jo8y3r27%m
       - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
-      - DJANGO_SETTINGS_MODULE= 'RMDP_api.settings'
+      - DJANGO_SETTINGS_MODULE='RMDP_api.settings'
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
     depends_on:
       - redis
     networks:

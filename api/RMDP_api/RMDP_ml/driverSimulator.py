@@ -20,7 +20,7 @@ class driverSimulator:
     def __init__(self):
 
         self.totalCurrentWorker = 2
-        self.DEBUG = False if int(os.environ['DEBUG']) == 1 else False
+        self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
         self.client = self.getMongoClientUrl(self.DEBUG)
         self.databaseName = self.client["RMDP"]
         self.restaurantCollection = self.databaseName["restaurant"]

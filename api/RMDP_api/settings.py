@@ -3,7 +3,6 @@ from datetime import timedelta
 from pathlib import Path
 from mongoengine import connect
 from RMDP_api import tasks
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 
@@ -11,7 +10,7 @@ SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "asdfasdfasdf"
-# DEBUG = True
+#DEBUG = True
 DEBUG = False if int(os.environ['DEBUG']) == 1 else True
 
 
@@ -142,8 +141,8 @@ CELERY_BEAT_SCHEDULE = {
         "task": "RMDP_api.tasks.generatingOrder",
         "schedule": timedelta(seconds=15),
     },
-     "driverSimulator": {
-        "task": "RMDP_api.tasks.generatingOrder",
-        "schedule": timedelta(seconds=15),
-    },
+    # "driverSimulator": {
+    #     "task": "RMDP_api.tasks.generatingOrder",
+    #     "schedule": timedelta(seconds=15),
+    # },
 }

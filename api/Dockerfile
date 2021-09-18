@@ -5,11 +5,12 @@ FROM python:3.9.5-alpine
 WORKDIR /usr/src/app
 
 # set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+
 
 # install dependencies
-RUN pip install --upgrade pip
+RUN apk --no-cache add gcc libc-dev geos-dev musl-dev linux-headers g++
+RUN pip install -U pip
+
 COPY ./requirements.txt /usr/src/app/requirements.txt
 RUN pip install -r requirements.txt
 
