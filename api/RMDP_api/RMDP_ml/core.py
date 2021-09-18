@@ -1,96 +1,68 @@
 import copy
 import os
 from datetime import datetime, timedelta
-from pymongo import MongoClient
 import itertools
 import math
 import logging
 from concurrent.futures import ThreadPoolExecutor
-
-
-class Singleton(object):
-    _instance = None
-
-    def __new__(class_, *args, **kwargs):
-        if not isinstance(class_._instance, class_):
-            class_._instance = object.__new__(class_, *args, **kwargs)
-        return class_._instance
-
-
-def mongoClientUrl(DEBUG):
-    if DEBUG:
-        return "mongodb://admin:admin@localhost:27017/RMDP?authSource=admin"
-    else:
-        return "mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin"
+from Database_Operator.Mongo_Operator import Mongo_Operate
+from Math import Geometry
 
 
 class RMDP:
-    _instance = None
 
     def __init__(self):
         self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
-        # self.DEBUG = True
-        # print(int(os.environ['DEBUG']) == 1)
-        self.Delta_S = 0
+
+        self.S = 0
         self.time_buffer = timedelta(minutes=0)
         self.t_Pmax = timedelta(seconds=40)
         self.t_ba = 10
         self.delay = 5
-
         self.capacity = 5
         self.velocity: float = 50 * 0.2777777777777778
         self.restaurantPrepareTime = timedelta(minutes=20)
         self.deadlineTime = timedelta(minutes=40)
-        self.client = MongoClient(mongoClientUrl(self.DEBUG))
-        self.databaseName = self.client["RMDP"]
-        self.restaurantCollection = self.databaseName["restaurant"]
-        self.driverCollection = self.databaseName["driver"]
-        self.all_citiesCollection = self.databaseName["all_cities"]
-        self.country_codeCollection = self.databaseName["country_code"]
-        self.orderCollection = self.databaseName["order"]
+
+        self.DBclient = Mongo_Operate()
+
         self.p = math.pi / 180
 
     def generateThread(self):
-        cityList = list(self.all_citiesCollection.find())
+        cityList = self.DBclient.getAllCity()
         totalCurrentWorker = 2
         logging.info("start generating")
         with ThreadPoolExecutor(max_workers=totalCurrentWorker) as executor:
             threads = []
             for i in range(len(cityList)):
                 threads.append(executor.submit(self.runRMDP, index=i, cityName=(cityList[i]['City'])))
-        logging.info("task completed")
 
     def runRMDP(self, index, cityName):
         try:
-            logging.info(index, "is started")
             delay = float("inf")
             slack = 0
             skipPostponement = False
             pairdOrder = []
             maxLengthPost = 5
-            restaurantList = list(
-                self.restaurantCollection.find({"City": cityName}, {"Restaurant_ID": 1, "Longitude": 1, "Latitude": 1}))
-            driverList = list(self.driverCollection.find({"City": cityName}))
+            restaurantList = self.DBclient.getRestaurantListBaseOnCity(cityName)
+            driverList = self.DBclient.getDriverBaseOnCity(cityName)
             filterrestTaurantCode = list(map(lambda x: int(x['Restaurant_ID']), restaurantList))
-            unAssignOrder = list(self.orderCollection.find({"$and": [{"order_status": "unasgined"}, {
-                "order_restaurant_carrier_restaurantId": {"$in": filterrestTaurantCode}}]}))
-            postponedOrder = list(self.orderCollection.find({"$and": [{"order_status": "watting"},
-                                                                      {"order_restaurant_carrier_restaurantId": {
-                                                                          "$in": filterrestTaurantCode}}]
-                                                             }))
+
+            unAssignOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "unasgined")
+
+            postponedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "watting")
 
             for order in unAssignOrder: order['order_request_time'] = datetime.strptime(order['order_request_time'],
                                                                                         '%d-%m-%Y %H:%M:%S')
             for order in postponedOrder: order['order_request_time'] = datetime.strptime(order['order_request_time'],
                                                                                          '%d-%m-%Y %H:%M:%S')
-
+            S = 0
             if len(unAssignOrder) == 0 and len(postponedOrder) > 0:
                 skipPostponement = True
                 unAssignOrder = copy.deepcopy(postponedOrder)
                 postponedOrder.clear()
-            if  maxLengthPost <= len(unAssignOrder):
+            if maxLengthPost <= len(unAssignOrder):
                 maxLengthPost = len(unAssignOrder) + 1
-                logging.info("upgrade maxLengPostTo:", len(unAssignOrder) + 1)
 
             for permutation in itertools.permutations(unAssignOrder):
 
@@ -102,7 +74,7 @@ class RMDP:
                         filter(lambda x: int(x['Restaurant_ID']) == int(D["order_restaurant_carrier_restaurantId"]),
                                restaurantList), None)
                     currentPairdDriverId = self.FindVehicle(D, currentPairdRestaurent, currentDriverList)
-                    D["driver_id"] = str(currentDriverList[currentPairdDriverId]['Driver_ID'])
+                    D["driver_id"] = currentDriverList[currentPairdDriverId]['Driver_ID']
                     currentDriverList[currentPairdDriverId]['Capacity'] += 1
                     currentDriverList[currentPairdDriverId]['Route'] = copy.deepcopy(
                         self.AssignOrder(D, currentDriverList[currentPairdDriverId], currentPairdRestaurent))
@@ -110,15 +82,16 @@ class RMDP:
                     if skipPostponement:
                         currentPairdOrder.append(D)
                     else:
-                        if self.Postponement(P_hat, D,maxLengthPost):
+                        if self.Postponement(P_hat, D, maxLengthPost):
                             P_hat.append(D)
                         else:
                             while (D['order_request_time'] - P_hat[0]['order_request_time']) >= self.t_Pmax:
-                                PairdDriverId = self.FindVehicle(P_hat[0])
+                                PairedRestaurent = copy.deepcopy(next(filter(
+                                    lambda x: x['Restaurant_ID'] == P_hat[0]["order_restaurant_carrier_restaurantId"],
+                                    restaurantList), None))
+                                PairdDriverId = self.FindVehicle(P_hat[0], PairedRestaurent, driverList)
                                 P_hat[0]['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
                                 driverList[PairdDriverId]['Capacity'] += 1
-                                PairedRestaurent = copy.deepcopy(next(filter(lambda x: int(x['Restaurant_ID']) == int(
-                                    order["order_restaurant_carrier_restaurantId"]), restaurantList), None))
                                 driverList[PairdDriverId]['Route'] = copy.deepcopy(
                                     self.AssignOrder(P_hat[0], currentDriverList[PairdDriverId], PairedRestaurent))
                                 pairdOrder.append(P_hat[0])
@@ -156,8 +129,8 @@ class RMDP:
                 currentPairedDriverId = driverList.index(
                     currentPairedDriver) if currentPairedDriver in driverList else -1
                 driverList[currentPairedDriverId]['Route'] = copy.deepcopy(list(filter(
-                    lambda x: (int(x['nodeType']) == 0 and x['order_id'] != order['_id']) or (
-                                int(x['nodeType']) == 1 and str(x['_id']) != str(order['_id'])),
+                    lambda x: (int(x['nodeType']) == 0 and x['Order_ID'] != order['Order_ID']) or (
+                            int(x['nodeType']) == 1 and str(x['Order_ID']) != str(order['Order_ID'])),
                     driverList[currentPairedDriverId]['Route'])))
 
             self.updateOrder(driverList)
@@ -176,8 +149,9 @@ class RMDP:
             for i in range(1, len(currentRoute), 1):
                 previousNode = currentRoute[i - 1]
                 currentNode = currentRoute[i]
-                currentDistance = self.coorDistance(float(previousNode['Latitude']), float(previousNode['Longitude']),
-                                                float(currentNode['Latitude']), float(currentNode['Longitude']))
+                currentDistance = Geometry.coorDistance(float(previousNode['Latitude']),
+                                                        float(previousNode['Longitude']),
+                                                        float(currentNode['Latitude']), float(currentNode['Longitude']))
                 tripTime += currentDistance / self.velocity
                 if 'order_request_time' in currentNode:
                     timeComplete = timedelta(seconds=tripTime) + self.time_buffer + datetime.now() + timedelta(hours=8)
@@ -195,7 +169,7 @@ class RMDP:
                 pairedDriver['Route'].append(order)
 
                 pairedDriver['Route'][0]['nodeType'] = 0
-                pairedDriver['Route'][0]['order_id'] = order['_id']
+                pairedDriver['Route'][0]['Order_ID'] = order['Order_ID']
 
                 pairedDriver['Route'][1]['nodeType'] = 1
 
@@ -233,11 +207,12 @@ class RMDP:
 
     def tripTime(self, driv, res, order):
         try:
-            disDriver2Res = self.coorDistance(float(driv['Latitude']), float(driv['Longitude']), float(res['Latitude']),
-                                          float(res['Longitude']))
-            Res2Delivery = self.coorDistance(float(res['Latitude']), float(res['Longitude']),
-                                         float(order['Latitude']),
-                                         float(order['Longitude']))
+            disDriver2Res = Geometry.coorDistance(float(driv['Latitude']), float(driv['Longitude']),
+                                                  float(res['Latitude']),
+                                                  float(res['Longitude']))
+            Res2Delivery = Geometry.coorDistance(float(res['Latitude']), float(res['Longitude']),
+                                                 float(order['Latitude']),
+                                                 float(order['Longitude']))
             return float(disDriver2Res + Res2Delivery / float(self.velocity))
         except Exception as e:
             logging.critical(e, exc_info=True)
@@ -246,8 +221,7 @@ class RMDP:
         try:
             handleDriver = list(filter(lambda driver: int(driver['Capacity']) < int(self.capacity), driverList))
             distanceList = list(map(lambda x: self.tripTime(x, OrderRestaurant, Order), handleDriver))
-            minDriver = distanceList.index(min(distanceList))
-            return minDriver
+            return distanceList.index(min(distanceList))
         except Exception as e:
             logging.critical(e, exc_info=True)
 
@@ -258,9 +232,10 @@ class RMDP:
             currentRoute: list = copy.deepcopy(route)
             currentRoute.insert(0, {"Longitude": Longitude, "Latitude": Latitude, 'nodeType': 2})
             for i in range(1, len(currentRoute), 1):
-                currentDistance = self.coorDistance(float(currentRoute[i - 1]['Latitude']),
-                                                float(currentRoute[i - 1]['Longitude']),
-                                                float(currentRoute[i]['Latitude']), float(currentRoute[i]['Longitude']))
+                currentDistance = Geometry.coorDistance(float(currentRoute[i - 1]['Latitude']),
+                                                        float(currentRoute[i - 1]['Longitude']),
+                                                        float(currentRoute[i]['Latitude']),
+                                                        float(currentRoute[i]['Longitude']))
                 tripTime += currentDistance / self.velocity
                 if 'restaurantId' in currentRoute[i]:
                     deadLine = currentRoute[i]['deadLineTime'] - datetime.now() + timedelta(hours=8)
@@ -277,7 +252,7 @@ class RMDP:
         except Exception as e:
             logging.critical(e, exc_info=True)
 
-    def Postponement(self, P_hat, D,maxLengthPost):
+    def Postponement(self, P_hat, D, maxLengthPost):
         try:
             if len(P_hat) < maxLengthPost or D['order_request_time'] - P_hat[0][
                 'order_request_time'] < self.t_Pmax:  # if postponement set is empty
@@ -287,24 +262,10 @@ class RMDP:
         except Exception as e:
             logging.critical(e, exc_info=True)
 
-
-
     def updateOrder(self, driverList):
         try:
-            updatedDriver = list(filter(lambda driver: len(driver['Route']) > 0, driverList))
-            for driver in updatedDriver:
-                self.driverCollection.update_one({
-                    'Driver_ID': driver['Driver_ID']
-                }, {
-                    "$set": {
-                        'Capacity': driver['Capacity'],
-                        'Velocity': driver['Velocity'],
-                        'Route': driver['Route']
-                    },
-                    "$currentDate": {
-                        "lastModified": True
-                    }
-                })
+            for driver in list(filter(lambda driver: len(driver['Route']) > 0, driverList)):
+                self.DBclient.updateDriver(driver)
         except Exception as e:
             logging.critical(e, exc_info=True)
 
@@ -312,36 +273,16 @@ class RMDP:
 
         for order in pospondList:
             try:
-                self.orderCollection.update_one({
-                    '_id': order['_id']
-                }, {
-                    '$set': {
-                        'order_status': 'watting'
-                    }
-                }, upsert=False)
+                self.DBclient.updatePosponedOrder(order)
             except Exception as e:
                 logging.critical(e, exc_info=True)
 
     def updatePairdOrder(self, pairedOrderList):
-        for pairedOrder in pairedOrderList:
-            try:
-                self.orderCollection.update_one({
-                    '_id': pairedOrder['_id']
-                }, {
-                    '$set': {
-                        'order_approved_at': datetime.now().strftime('%d-%m-%Y %H:%M:%S'),
-                        'order_status': 'headToRes',
-                        'driver_id': pairedOrder['driver_id']
-                    }
-                }, upsert=False)
-            except Exception as e:
-                logging.critical(e, exc_info=True)
-
-    def coorDistance(self, lat1, lon1, lat2, lon2):
         try:
-            a = 0.5 - math.cos((lat2 - lat1) * self.p) / 2 + math.cos(lat1 * self.p) * math.cos(lat2 * self.p) * (
-                    1 - math.cos((lon2 - lon1) * self.p)) / 2
-            return 12742 * math.asin(math.sqrt(a))  # 2*R*asin...
+            for pairedOrder in pairedOrderList:
+                self.DBclient.updatePairdOrder(pairedOrder)
         except Exception as e:
             logging.critical(e, exc_info=True)
+
+
 

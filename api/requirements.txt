@@ -19,7 +19,6 @@ jmespath==0.9.4
 kombu==4.6.4
 more-itertools==7.2.0
 oauthlib==3.1.0
-PyJWT==1.7.1
 python-dateutil==2.8.0
 python3-openid==3.1.0
 pytz==2019.2
@@ -41,6 +40,7 @@ django-cors-headers
 django-rest-framework-mongoengine
 djangorestframework~=3.12.4
 mongoengine~=0.23.1
-rejson~=0.5.4
 Django==2.2.13
 gunicorn==19.9.0
+numpy
+shapely

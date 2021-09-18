@@ -2,36 +2,22 @@
 # from Math.Geometry import interSectionCircleAndLine
 import logging
 import os
-import os
-import threading
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date, datetime
-import random
-from urllib.parse import urlencode
-from urllib.request import Request, urlopen
-from pymongo import MongoClient
+
 # from Math import Geometry
-# from Database_Operator.Mongo_Operator import Mongo_Operate
+from .Database_Operator.Mongo_Operator import Mongo_Operate
+from .Math import Geometry
 
 
 class driverSimulator:
-    _instance = None
-
     def __init__(self):
-
         self.totalCurrentWorker = 2
         self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
-        self.client = self.getMongoClientUrl(self.DEBUG)
-        self.databaseName = self.client["RMDP"]
-        self.restaurantCollection = self.databaseName["restaurant"]
-        self.driverCollection = self.databaseName["driver"]
-        self.all_citiesCollection = self.databaseName["all_cities"]
-        self.country_codeCollection = self.databaseName["country_code"]
-        self.orderCollection = self.databaseName["order"]
+        self.DBclient = Mongo_Operate()
+        self.updateTime = 1
 
     def generateThread(self):
-
-        cityList = self.MongoClient.getAllCity()
+        cityList = self.DBclient.getAllCity()
         logging.info("start generating city")
         with ThreadPoolExecutor(max_workers=self.totalCurrentWorker) as executor:
             threads = []
@@ -39,35 +25,43 @@ class driverSimulator:
                 threads.append(executor.submit(self.updateDriverLocation, index=i, cityName=(cityList[i]['City'])))
         logging.info("task completed")
 
-    def updateDriverLocation(self, time, cityName):
-        driverList = list(self.driverCollection.find({"City": cityName}))
-        # orderList =
-        hasOrderVehicle: list = [routePerVehicle for routePerVehicle in self.Theta_x if
-                                 (routePerVehicle['route'] != [])]
+    def updateDriverLocation(self, index, cityName):
+        try:
+            driverList = self.DBclient.getHasOrderDriverBaseOnCity(cityName)
+            restaurantIdList = list(
+                map(lambda x: int(x['Restaurant_ID']), self.DBclient.getRestaurantIDBaseOnCity(cityName)))
+            pairdOrderList = self.DBclient.getPairedOrderBaseOnCity(restaurantIdList)
+            if len(driverList) > 0:
+                for currentDriver in driverList:
 
-        for route in hasOrderVehicle:
-            currentDriver = self.vehiceList[route.get("driverId") - 1]
-            targetDestination = route['route'][0]
-            travledDistance = currentDriver.getVelocity() * time
-            estimatedDistance = self.coorDistance(currentDriver.getLatitude(), currentDriver.getLongitude(),
-                                                      targetDestination.getLatitude(), targetDestination.getLongitude())
-            if travledDistance > 0:
+                    targetDestination = currentDriver['Route'][0]
+                    DistanceRemain = Geometry.coorDistance(currentDriver['Latitude'],
+                                                           currentDriver['Longitude'],
+                                                           targetDestination['Latitude'],
+                                                           targetDestination['Longitude'])
+                    DistanceTraveled = currentDriver['Velocity'] * self.updateTime
+                    updatedLon, updatedLat = Geometry.interSectionCircleAndLine(currentDriver['Longitude'],
+                                                                                currentDriver['Latitude'],
+                                                                                DistanceTraveled,
+                                                                                currentDriver['Longitude'],
+                                                                                currentDriver['Latitude'],
+                                                                                targetDestination['Longitude'],
+                                                                                targetDestination['Latitude'])
+                    if DistanceTraveled > DistanceRemain:
+                        currentDriver['Latitude'] = targetDestination['Latitude']
+                        currentDriver['Longitude'] = targetDestination['Longitude']
+                        travelLocation = currentDriver['Route'].pop(0)
 
-                if travledDistance >= estimatedDistance:
-                    currentDriver.setLatitude(targetDestination.getLatitude())
-                    currentDriver.setLongitude(targetDestination.getLongitude())
-                    route['route'].pop(0)
-                else:
-                    updatedLon, updatedLat = self.Geometry.interSectionCircleAndLine(currentDriver.getLongitude(),
-                                                                                currentDriver.getLatitude(),
-                                                                                travledDistance,
-                                                                                currentDriver.getLongitude(),
-                                                                                currentDriver.getLatitude(),
-                                                                                targetDestination.getLongitude(),
-                                                                                targetDestination.getLatitude())
-                    currentDriver.setLatitude(updatedLon)
-                    currentDriver.setLongitude(updatedLat)
-
-
-test = driverSimulator()
-test.generateThread()
+                        if travelLocation['nodeType'] == 0:
+                            self.DBclient.updateOrderToRes(targetDestination['Order_ID'])
+                        else:
+                            self.DBclient.updateOrderToRes(targetDestination['Order_ID'])
+                            currentDriver['Capacity'] -= 1
+                        if currentDriver['Route'] is None:
+                            currentDriver['Velocity'] = 0
+                    else:
+                        currentDriver['Latitude'] = updatedLon
+                        currentDriver['Longitude'] = updatedLat
+                    self.DBclient.updateDriver(currentDriver)
+        except Exception as e:
+            logging.critical(e, exc_info=True)

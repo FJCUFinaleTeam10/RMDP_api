@@ -3,7 +3,6 @@ from datetime import timedelta
 from pathlib import Path
 from mongoengine import connect
 from RMDP_api import tasks
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 
@@ -20,6 +19,7 @@ def mongoClientUrl(DEBUG):
         return "mongodb://admin:admin@localhost:27017/RMDP?authSource=admin"
     else:
         return "mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin"
+
 
 connect("example-project", host=mongoClientUrl(DEBUG))
 
@@ -142,8 +142,8 @@ CELERY_BEAT_SCHEDULE = {
         "task": "RMDP_api.tasks.generatingOrder",
         "schedule": timedelta(seconds=15),
     },
-    # "driverSimulator": {
-    #     "task": "RMDP_api.tasks.generatingOrder",
-    #     "schedule": timedelta(seconds=15),
-    # },
+    "driverSimulator": {
+        "task": "RMDP_api.tasks.updateDriver",
+        "schedule": timedelta(seconds=1),
+    },
 }
