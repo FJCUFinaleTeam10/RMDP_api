@@ -50,5 +50,5 @@ class userSimulator:
         except Exception as e:
             logging.critical(e, exc_info=True)
 
-test = userSimulator()
-test.generateThread()
+
+

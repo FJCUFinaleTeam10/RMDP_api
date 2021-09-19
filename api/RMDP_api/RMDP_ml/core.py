@@ -52,10 +52,6 @@ class RMDP:
 
             postponedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "waiting")
 
-            for order in unAssignOrder: order['order_request_time'] = datetime.strptime(order['order_request_time'],
-                                                                                        '%d-%m-%Y %H:%M:%S')
-            for order in postponedOrder: order['order_request_time'] = datetime.strptime(order['order_request_time'],
-                                                                                         '%d-%m-%Y %H:%M:%S')
             S = 0
             if len(unAssignOrder) == 0 and len(postponedOrder) > 0:
                 skipPostponement = True
@@ -109,7 +105,6 @@ class RMDP:
                                                                      currentDriverList)
                                     currentDriverList[PairdDriverId]['Capacity'] += 1
                                     order['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
-                                    PairedRestaurent['orderId'] = (order['_id'])
                                     currentDriverList[PairdDriverId]['Route'] = copy.deepcopy(
                                         self.AssignOrder(order, currentDriverList[PairdDriverId],
                                                          PairedRestaurent))
@@ -193,7 +188,7 @@ class RMDP:
 
                 pairedDriver['Route'].insert(first, currentParedRestaurent)
                 pairedDriver['Route'][first]['nodeType'] = 0
-                pairedDriver['Route'][first]['order_id'] = order['_id']
+                pairedDriver['Route'][first]['Order_ID'] = order['Order_ID']
 
                 pairedDriver['Route'].insert(second, order)
                 pairedDriver['Route'][second]['nodeType'] = 1
