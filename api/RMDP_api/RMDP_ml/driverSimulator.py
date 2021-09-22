@@ -3,8 +3,10 @@
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
-
+from datetime import datetime
 # from Math import Geometry
+
+
 from Database_Operator.Mongo_Operator import Mongo_Operate
 from Math import Geometry
 
@@ -30,7 +32,7 @@ class driverSimulator:
             driverList = self.DBclient.getHasOrderDriverBaseOnCity(cityName)
             restaurantIdList = list(
                 map(lambda x: int(x['Restaurant_ID']), self.DBclient.getRestaurantIDBaseOnCity(cityName)))
-            pairdOrderList = self.DBclient.getPairedOrderBaseOnCity(restaurantIdList)
+            orderList = self.DBclient.getPairedOrderBaseOnCity(restaurantIdList)
             if len(driverList) > 0:
                 for currentDriver in driverList:
 
@@ -45,12 +47,18 @@ class driverSimulator:
                         currentDriver['Latitude'] = targetDestination['Latitude']
                         currentDriver['Longitude'] = targetDestination['Longitude']
                         travelLocation = currentDriver['Route'].pop(0)
+                        currentOrder = next(
+                            order for order in orderList if order['Order_ID'] == travelLocation['Order_ID'])
 
                         if travelLocation['nodeType'] == 0:
-                            self.DBclient.updateOrderToRes(targetDestination['Order_ID'])
+                            currentOrder['order_status'] = 'delivered'
+                            currentOrder['order_delivered_customer_date'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
                         else:
-                            self.DBclient.updateOrderToRes(targetDestination['Order_ID'])
-                            currentDriver['Capacity'] -= 1
+                            currentOrder['order_status'] = 'headToCus'
+                            currentOrder['order_restaurant_carrier_date'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                        self.DBclient.updateOrder(targetDestination)
+                        currentDriver['Capacity'] -= 1
+
                         if currentDriver['Route'] is None:
                             currentDriver['Velocity'] = 0
                     else:
@@ -63,7 +71,7 @@ class driverSimulator:
                                                                                     targetDestination['Latitude'])
                         currentDriver['Latitude'] = updatedLon
                         currentDriver['Longitude'] = updatedLat
-                    self.DBclient.updateDriver(currentDriver,currentDriver['Velocity'])
+                    self.DBclient.updateDriver(currentDriver)
         except Exception as e:
             logging.critical(e, exc_info=True)
 

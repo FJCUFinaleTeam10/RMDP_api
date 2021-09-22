@@ -1,7 +1,7 @@
 import logging
 import math
 import random
-
+from pprint import pprint
 from numpy import ones, vstack
 from numpy.linalg import lstsq
 import numpy as np
@@ -22,10 +22,10 @@ def lineSolution(x1: float, x2: float, y1: float, y2: float):
 
 def interSectionCircleAndLine(center_Latitude: float, center_Longitude: float, Radius: float, a_Latitude: float,
                               a_Longitude: float, b_Latitude: float, b_Longitude: float):
-    circleCoordinate = Point(center_Latitude, center_Longitude)
-    circle = circleCoordinate.buffer(Radius).boundary
+    circle = Point(center_Latitude, center_Longitude).buffer(Radius).bound
     line = LineString([(a_Longitude, a_Latitude), (b_Latitude, b_Longitude)])
     intersection = circle.intersection(line)
+    pprint(intersection)
     return intersection.x, intersection.y
 
 

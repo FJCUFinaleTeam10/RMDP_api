@@ -1,9 +1,8 @@
 import logging
 import os
-from datetime import datetime, timedelta
 import uuid
+from datetime import datetime
 
-from bson import ObjectId
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
@@ -79,46 +78,6 @@ class Mongo_Operate:
         )
         )
 
-    def updateOrderToRes(self, order_id):
-        try:
-            self.orderCollection.update_one(
-                {
-                    'Order_ID': order_id
-                },
-                {
-                    "$set": {
-                        "order_restaurant_carrier_date": datetime.now().strftime('%d-%m-%Y %H:%M:%S'),
-                        "order_status": "headToCus"
-                    }
-                }
-            )
-        except Exception as e:
-            logging.critical(e, exc_info=True)
-        except PyMongoError as py_mongo_error:
-            logging.critical(py_mongo_error, exc_info=True)
-
-    def updateOrderToCus(self, order_id):
-        try:
-            self.orderCollection.update_one(
-                {
-                    'Order_ID': order_id
-                },
-                {
-                    "$set": {
-                        "order_delivered_customer_date": datetime.now().strftime('%d-%m-%Y %H:%M:%S'),
-                        "order_status": "delivered"
-                    }
-
-                }
-            )
-        except Exception as e:
-            logging.critical(e, exc_info=True)
-        except PyMongoError as py_mongo_error:
-            logging.critical(py_mongo_error, exc_info=True)
-
-        except Exception as e:
-            logging.critical(e, exc_info=True)
-
     def getOrderBaseOnCity(self, filterrestTaurantCode, orderStatus):
         try:
             return list(self.orderCollection.find(
@@ -134,44 +93,42 @@ class Mongo_Operate:
         except PyMongoError as py_mongo_error:
             logging.critical(py_mongo_error, exc_info=True)
 
-    def updateDriver(self, driver,Velocity):
+    def updateDriver(self, driver):
         try:
             self.driverCollection.update_one({
                 'Driver_ID': driver['Driver_ID']
             }, {
                 "$set": {
                     'Capacity': driver['Capacity'],
-                    'Velocity': Velocity,
+                    'Velocity': driver['Velocity'],
                     'Route': driver['Route'],
+                    'Latitude': driver['Latitude'],
+                    'Longitude': driver['Longitude'],
                 },
-                "$currentDate": {
-                    "lastModified": True
-                }
             })
         except PyMongoError as py_mongo_error:
             logging.critical(py_mongo_error, exc_info=True)
 
-    def updatePairdOrder(self, order):
+    def updateOrder(self, order):
         try:
             self.orderCollection.update_one({
                 '_id': order['_id']
             }, {
                 '$set': {
-                    'order_approved_at': datetime.now().strftime('%d-%m-%Y %H:%M:%S'),
-                    'order_status': 'headToRes',
-                    'driver_id': order['driver_id']
-                }
-            }, upsert=False)
-        except PyMongoError as py_mongo_error:
-            logging.critical(py_mongo_error, exc_info=True)
-
-    def updatePosponedOrder(self, order):
-        try:
-            self.orderCollection.update_one({
-                '_id': order['_id']
-            }, {
-                '$set': {
-                    'order_status': 'watting'
+                    'order_approved_at': order['order_approved_at'] if 'order_approved_at' in order else None,
+                    'Longitude': order['Longitude'],
+                    'Latitude': order['Latitude'],
+                    'order_delivered_customer_date': order[
+                        'order_delivered_customer_date'] if 'order_delivered_customer_date' in order else None,
+                    'order_request_time': order['order_request_time'],
+                    'order_restaurant_carrier_date': order[
+                        'order_restaurant_carrier_date'] if 'order_restaurant_carrier_date' in order else None,
+                    'order_restaurant_carrier_restaurantId': order['order_restaurant_carrier_restaurantId'],
+                    'driver_id': order['driver_id'] if 'driver_id' in order else None,
+                    'order_status': order['order_status'],
+                    'Order_ID': order['Order_ID'],
+                    'order_estimated_delivery_date': order[
+                        'order_estimated_delivery_date'] if 'order_estimated_delivery_date' in order else None,
                 }
             }, upsert=False)
         except Exception as e:
@@ -179,20 +136,24 @@ class Mongo_Operate:
         except PyMongoError as py_mongo_error:
             logging.critical(py_mongo_error, exc_info=True)
 
-    def generatingOrder(self, Longitude, Latiude, Id):
+    def insertOrder(self, order):
         try:
             self.orderCollection.insert(
                 {
-                    'order_approved_at': None,
-                    'Longitude': Longitude,
-                    'Latitude': Latiude,
-                    'order_delivered_customer_date': None,
-                    'order_request_time': datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
-                    'order_restaurant_carrier_date': None,
-                    'order_restaurant_carrier_restaurantId': Id,
-                    'driver_id': None,
-                    'order_status': 'unasgined',
-                    'Order_ID': str(uuid.uuid4())
+                    'order_approved_at': order['order_approved_at'] if 'order_approved_at' in order else None,
+                    'Longitude': order['Longitude'],
+                    'Latitude': order['Latitude'],
+                    'order_delivered_customer_date': order[
+                        'order_delivered_customer_date'] if 'order_delivered_customer_date' in order else None,
+                    'order_request_time': order['order_request_time'],
+                    'order_restaurant_carrier_date': order[
+                        'order_restaurant_carrier_date'] if 'order_restaurant_carrier_date' in order else None,
+                    'order_restaurant_carrier_restaurantId': order['order_restaurant_carrier_restaurantId'],
+                    'driver_id': order['driver_id'] if 'driver_id' in order else None,
+                    'order_status': order['order_status'],
+                    'Order_ID': order['Order_ID'],
+                    'order_estimated_delivery_date': order[
+                        'order_estimated_delivery_date'] if 'order_estimated_delivery_date' in order else None,
                 }
             )
         except PyMongoError as py_mongo_error:
