@@ -68,7 +68,7 @@ class RMDP:
                     currentPairdRestaurent = next(restaurant for restaurant in restaurantList if
                                                   restaurant['Restaurant_ID'] == D[
                                                       "order_restaurant_carrier_restaurantId"])
-                    currentPairdDriverId = self.FindVehicle(D, currentPairdRestaurent, currentDriverList)
+                    currentPairdDriverId = self.Qing(D,currentPairdRestaurent,currentDriverList,cityName)
                     D["driver_id"] = currentDriverList[currentPairdDriverId]['Driver_ID']
                     currentDriverList[currentPairdDriverId]['Capacity'] += 1 #why assign twice
                     currentDriverList[currentPairdDriverId]['Route'] = copy.deepcopy(
@@ -85,7 +85,7 @@ class RMDP:
                                                                       restaurant['Restaurant_ID'] == P_hat[0][
                                                                           "order_restaurant_carrier_restaurantId"]
                                                                       ))
-                                PairdDriverId = self.FindVehicle(P_hat[0], PairedRestaurent, driverList)
+                                PairdDriverId = self.Qing(D,currentPairdRestaurent,currentDriverList,cityName)
                                 P_hat[0]['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
                                 driverList[PairdDriverId]['Capacity'] += 1
                                 driverList[PairdDriverId]['Route'] = copy.deepcopy(
@@ -100,8 +100,7 @@ class RMDP:
                                         restaurant for restaurant in restaurantList if
                                         int(restaurant['Restaurant_ID']) == int(
                                             order["order_restaurant_carrier_restaurantId"])))
-                                    PairdDriverId = self.FindVehicle(order, PairedRestaurent,
-                                                                     currentDriverList)
+                                    PairdDriverId = self.Qing(D,currentPairdRestaurent,currentDriverList,cityName)
                                     currentDriverList[PairdDriverId]['Capacity'] += 1
                                     order['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
                                     currentDriverList[PairdDriverId]['Route'] = copy.deepcopy(
