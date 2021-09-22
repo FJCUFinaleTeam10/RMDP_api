@@ -47,21 +47,10 @@ class RMDP:
             driverList = self.DBclient.getDriverBaseOnCity(cityName)
             filterrestTaurantCode = list(map(lambda x: int(x['Restaurant_ID']), restaurantList))# set all restaurant_id to int
 
-<<<<<<< HEAD
             unAssignOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "unasgined")# get unassign order
 
             postponedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "watting")# get postpone order
 
-            for order in unAssignOrder: order['order_request_time'] = datetime.strptime(order['order_request_time'],
-                                                                                        '%d-%m-%Y %H:%M:%S')#get unassignorder time
-            for order in postponedOrder: order['order_request_time'] = datetime.strptime(order['order_request_time'],
-                                                                                         '%d-%m-%Y %H:%M:%S')#get posponementtime
-=======
-            unAssignOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "unassigned")
-
-            postponedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "waiting")
-
->>>>>>> 8dc410c110b3ba6ee72c2c3974bc6161da12c0b7
             S = 0
             if len(unAssignOrder) == 0 and len(postponedOrder) > 0:
                 skipPostponement = True
@@ -76,17 +65,10 @@ class RMDP:
                 P_hat = copy.deepcopy(postponedOrder) #waitting order
                 currentPairdOrder = copy.deepcopy(pairdOrder)
                 for D in permutation:
-<<<<<<< HEAD
-                    currentPairdRestaurent = next(
-                        filter(lambda x: int(x['Restaurant_ID']) == int(D["order_restaurant_carrier_restaurantId"]),
-                               restaurantList), None)
-                    currentPairdDriverId = self.Qing(D,currentPairdRestaurent,currentDriverList,cityName)#q_learning
-=======
                     currentPairdRestaurent = next(restaurant for restaurant in restaurantList if
                                                   restaurant['Restaurant_ID'] == D[
                                                       "order_restaurant_carrier_restaurantId"])
                     currentPairdDriverId = self.FindVehicle(D, currentPairdRestaurent, currentDriverList)
->>>>>>> 8dc410c110b3ba6ee72c2c3974bc6161da12c0b7
                     D["driver_id"] = currentDriverList[currentPairdDriverId]['Driver_ID']
                     currentDriverList[currentPairdDriverId]['Capacity'] += 1 #why assign twice
                     currentDriverList[currentPairdDriverId]['Route'] = copy.deepcopy(
@@ -99,18 +81,11 @@ class RMDP:
                             P_hat.append(D)
                         else:
                             while (D['order_request_time'] - P_hat[0]['order_request_time']) >= self.t_Pmax:
-<<<<<<< HEAD
-                                PairedRestaurent = copy.deepcopy(next(filter(
-                                    lambda x: x['Restaurant_ID'] == P_hat[0]["order_restaurant_carrier_restaurantId"],
-                                    restaurantList), None))
-                                PairdDriverId = self.FindVehicle(P_hat[0], PairedRestaurent, driverList)#q_learning
-=======
                                 PairedRestaurent = copy.deepcopy(next(restaurant for restaurant in restaurantList if
                                                                       restaurant['Restaurant_ID'] == P_hat[0][
                                                                           "order_restaurant_carrier_restaurantId"]
                                                                       ))
                                 PairdDriverId = self.FindVehicle(P_hat[0], PairedRestaurent, driverList)
->>>>>>> 8dc410c110b3ba6ee72c2c3974bc6161da12c0b7
                                 P_hat[0]['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
                                 driverList[PairdDriverId]['Capacity'] += 1
                                 driverList[PairdDriverId]['Route'] = copy.deepcopy(
@@ -310,7 +285,6 @@ class RMDP:
         except Exception as e:
             logging.critical(e, exc_info=True)
 
-<<<<<<< HEAD
     def Qing(self, Ds_0, restaurant, driverlist, city):
         # for episode in range(self.total_episodes):
 
@@ -436,8 +410,3 @@ class RMDP:
                         self.q_table[state, 1] = reward
 TEST = RMDP()
 TEST.generateThread()
-=======
-
-test = RMDP()
-test.generateThread()
->>>>>>> 8dc410c110b3ba6ee72c2c3974bc6161da12c0b7
