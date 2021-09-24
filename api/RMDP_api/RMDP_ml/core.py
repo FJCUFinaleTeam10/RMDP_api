@@ -5,6 +5,10 @@ import itertools
 import math
 import logging
 from concurrent.futures import ThreadPoolExecutor
+from random import random
+
+import numpy as np
+
 from Database_Operator.Mongo_Operator import Mongo_Operate
 from Math import Geometry
 
@@ -50,7 +54,6 @@ class RMDP:
                 map(lambda x: int(x['Restaurant_ID']), restaurantList))  # set all restaurant_id to int
 
             unAssignOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "unasgined")  # get unassign order
-
             postponedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "watting")  # get postpone order
 
             S = 0
@@ -89,8 +92,8 @@ class RMDP:
                                                                       ))
                                 PairdDriverId = self.Qing(D, currentPairdRestaurent, currentDriverList, cityName)
                                 P_hat[0]['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
-                                driverList[PairdDriverId]['Capacity'] += 1
-                                driverList[PairdDriverId]['Route'] = copy.deepcopy(
+                                currentDriverList[PairdDriverId]['Capacity'] += 1
+                                currentDriverList[PairdDriverId]['Route'] = copy.deepcopy(
                                     self.AssignOrder(P_hat[0], currentDriverList[PairdDriverId], PairedRestaurent))
                                 pairdOrder.append(P_hat[0])  # add finish order
                                 P_hat.pop(0)
@@ -389,15 +392,15 @@ class RMDP:
 
         new_state = [float(Ds_0['Latitude']), float(Ds_0['Longitude'])]
         reward = Geometry.coorDistance(rest_pos[0], rest_pos[1], delivery_pos[0], delivery_pos[1]) / ((
-                                                                                                                  Geometry.coorDistance(
-                                                                                                                      rest_pos[
-                                                                                                                          0],
-                                                                                                                      rest_pos[
-                                                                                                                          1],
-                                                                                                                      delivery_pos[
-                                                                                                                          0],
-                                                                                                                      delivery_pos[
-                                                                                                                          1]) / self.velocity) + self.restaurantPrepareTime)  # (resturant to delivery distance)/(finish time)
+                                                                                                              Geometry.coorDistance(
+                                                                                                                  rest_pos[
+                                                                                                                      0],
+                                                                                                                  rest_pos[
+                                                                                                                      1],
+                                                                                                                  delivery_pos[
+                                                                                                                      0],
+                                                                                                                  delivery_pos[
+                                                                                                                      1]) / self.velocity) + self.restaurantPrepareTime)  # (resturant to delivery distance)/(finish time)
 
         # update q_table
         self.q_table[state, action] = self.q_table[state,
@@ -424,5 +427,5 @@ class RMDP:
                         self.q_table[state, 1] = reward
 
 
-TEST = RMDP()
-TEST.generateThread()
+test = RMDP()
+test.generateThread()
