@@ -115,13 +115,13 @@ class RMDP:
                                 P_hat.clear()
                             P_hat.append(D)
                     S = self.TotalDelay(driverList)
-                currentSlack = self.Slack(driverList)
-                if (S < delay) or ((S == delay) and (currentSlack < slack)):
-                    slack = currentSlack
-                    delay = S
-                    driverList = copy.deepcopy(currentDriverList)
-                    postponedOrder = copy.deepcopy(P_hat)
-                    pairdOrder = copy.deepcopy(currentPairdOrder)
+                    currentSlack = self.Slack(driverList)
+                    if (S < delay) or ((S == delay) and (currentSlack < slack)):
+                        slack = currentSlack
+                        delay = S
+                        driverList = copy.deepcopy(currentDriverList)
+                        postponedOrder = copy.deepcopy(P_hat)
+                        pairdOrder = copy.deepcopy(currentPairdOrder)
             for order in postponedOrder:
                 currentPairedDriver = next(
                     driver for driver in driverList if str(driver['Driver_ID']) == str(order['driver_id']))
