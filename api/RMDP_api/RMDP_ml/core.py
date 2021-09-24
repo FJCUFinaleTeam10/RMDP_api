@@ -39,7 +39,7 @@ class RMDP:
         with ThreadPoolExecutor(max_workers=totalCurrentWorker) as executor:
             threads = []
             for i in range(len(cityList)):
-                threads.append(executor.submit(self.runRMDP, index=i, cityName=(cityList[i]['City'])))
+                threads.append(executor.submit(self.runRMDP, index=i, cityName=(cityList[i])))
 
     def runRMDP(self, index, cityName):
         try:
@@ -48,13 +48,13 @@ class RMDP:
             skipPostponement = False
             pairdOrder = []
             maxLengthPost = 5
-            restaurantList = self.DBclient.getRestaurantListBaseOnCity(cityName)
+            restaurantList = self.DBclient.getRestaurantListBaseOnCity(cityName['City'])
             driverList = self.DBclient.getDriverBaseOnCity(cityName)
             filterrestTaurantCode = list(
                 map(lambda x: int(x['Restaurant_ID']), restaurantList))  # set all restaurant_id to int
 
-            unAssignOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "unasgined")  # get unassign order
-            postponedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "watting")  # get postpone order
+            unAssignOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "unassigned")  # get unassign order
+            postponedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "waiting")  # get postpone order
 
             S = 0
             if len(unAssignOrder) == 0 and len(postponedOrder) > 0:
@@ -131,6 +131,10 @@ class RMDP:
                     lambda x: (int(x['nodeType']) == 0 and x['Order_ID'] != order['Order_ID']) or (  # why no string
                             int(x['nodeType']) == 1 and str(x['Order_ID']) != str(order['Order_ID'])),
                     driverList[currentPairedDriverId]['Route'])))
+
+                currentPairdRestaurent = next(restaurant for restaurant in restaurantList if
+                                              restaurant['Restaurant_ID'] == D[
+                                                  "order_restaurant_carrier_restaurantId"])
 
             self.updateDriver(driverList)
             self.updatePosponedOrder(postponedOrder)
@@ -303,7 +307,7 @@ class RMDP:
         agents = []  # vehicle class
         counter = 0
         low_capacity = 5
-        for v in driverList:
+        for v in driverlist:
             v_delay = 0
             v_capacity = int(v['Capacity'])
             if v_capacity > low_capacity:
@@ -337,18 +341,14 @@ class RMDP:
         for agent in agents:
             agent_pos = np.array([agent['Latitude'], agent['Longitude']])
             cityList = self.DBclient.getAllCity()
-            currentcity = copy.deepcopy(
-                next(filter(lambda x: string(x['city']) == city, cityList),
-                     None))
+            currentcity = copy.deepcopy(next(filter(lambda x: string(x['city']) == city, cityList), None))
             state = [abs(float(currentcity['Latitude']) - agent_pos[0]) / (currentcity['radius'] * 2 / 50),
                      abs(float(currentcity['Longitude']) - agent_pos[1]) / (currentcity['radius'] * 2 / 50)]
             state = state[0] * 50 + state[1]
             # decide action
             exp_exp_tradeoff = random.uniform(0, 1)
-            if exp_exp_tradeoff > 1.0:
-                action = np.argmax(self.q_table[state, :])
-            else:
-                action = random.randint(0, 1)
+            action = np.argmax(self.q_table[state, :]) if exp_exp_tradeoff > 1.0 else random.randint(0, 1)
+
             if action == 1:
                 break
         # if all agent false take order
