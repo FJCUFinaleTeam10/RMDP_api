@@ -461,16 +461,17 @@ class RMDP:
             if drlist[i]['Driver_ID'] == agent_id:
                 return_index = i
                 break
-        self.DBclient.updateQlearning(q_setting)
+
         # reward = resturant&delivery distance / finish time
-        return return_index
+
 
         q_setting['episode']+=1
             # reduce episode
         q_setting['epsilon'] = q_setting['min_epsilon'] + \
                 (q_setting['max_epsilon']-q_setting['min_epsilon']) * \
                 np.exp(-q_setting['decay_rate']*q_setting['episode'])
-
+        self.DBclient.updateQlearning(q_setting)
+        return return_index
 
 
     def real_reward(self, agent_id, order_id, reward,vehicle_List,city):
