@@ -111,7 +111,7 @@ class Q_learning:
                                                            action]+self.learning_rate*(reward+self.gamma*np.max(self.q_table[new_state, :])-self.q_table[state, action])
 
             # reduce episode
-            episode = self.min_epsilon + \
+            self.epsilon = self.min_epsilon + \
                 (self.max_epsilon-self.min_epsilon) * \
                 np.exp(-self.decay_rate*episode)
 

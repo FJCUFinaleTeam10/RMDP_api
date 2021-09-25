@@ -7,12 +7,13 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from Database_Operator.Mongo_Operator import Mongo_Operate
 from Math import Geometry
-
+import  numpy as np
+import random
 class RMDP:
 
     def __init__(self):
         self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
-
+        #self.DEBUG = True
         self.S = 0
         self.time_buffer = timedelta(minutes=0)
         self.t_Pmax = timedelta(seconds=40)
@@ -45,62 +46,86 @@ class RMDP:
             maxLengthPost = 5
             restaurantList = self.DBclient.getRestaurantListBaseOnCity(cityName)
             driverList = self.DBclient.getDriverBaseOnCity(cityName)
-            filterrestTaurantCode = list(map(lambda x: int(x['Restaurant_ID']), restaurantList))# set all restaurant_id to int
 
-            unAssignOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "unasgined")# get unassign order
+            filterrestTaurantCode = list(
+                map(lambda x: int(x['Restaurant_ID']), restaurantList))  # set all restaurant_id to int
+            finishOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "headToCus")
+            for forder in finishOrder:
 
-            postponedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "watting")# get postpone order
+                forder['order_status'] = 'finished'
+                getrestaurant = next(
+                                        restaurant for restaurant in restaurantList if
+                                        int(restaurant['Restaurant_ID']) == int(forder["order_restaurant_carrier_restaurantId"]))
+                time =  int((datetime.strptime(forder['order_restaurant_carrier_date'],"%Y-%m-%d %H:%M:%S" )-datetime.strptime(forder['order_request_time'],"%d-%m-%Y %H:%M:%S" ))/60)
+                distance = Geometry.coorDistance(getrestaurant['Latitude'], getrestaurant['Longitude'], forder['Latitude'], forder['Longitude'])
+                reward = distance/time
+                self.real_reward(forder['driver_id'],forder['Order_ID'],reward,driverList,cityName)
+                self.DBclient.updateOrder(forder)
+            driverList = self.DBclient.getDriverBaseOnCity(cityName)
+            unAssignOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "unassigned")  # get unassign order
+            postponedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "waiting")  # get postpone order
+            print(len(unAssignOrder))
 
             S = 0
             if len(unAssignOrder) == 0 and len(postponedOrder) > 0:
                 skipPostponement = True
                 unAssignOrder = copy.deepcopy(postponedOrder)
                 postponedOrder.clear()
+                '''
             if maxLengthPost <= len(unAssignOrder):
                 maxLengthPost = len(unAssignOrder) + 1
-
+            '''
             for permutation in itertools.permutations(unAssignOrder):
-
                 currentDriverList = copy.deepcopy(driverList)
-                P_hat = copy.deepcopy(postponedOrder) #waitting order
+                P_hat = copy.deepcopy(postponedOrder)  # waitting order
                 currentPairdOrder = copy.deepcopy(pairdOrder)
                 for D in permutation:
                     currentPairdRestaurent = next(restaurant for restaurant in restaurantList if
                                                   restaurant['Restaurant_ID'] == D[
                                                       "order_restaurant_carrier_restaurantId"])
-                    currentPairdDriverId = self.Qing(D,currentPairdRestaurent,currentDriverList,cityName)
+                    '''
+                    currentPairdDriverId = self.Qing(D, currentPairdRestaurent, currentDriverList, cityName)
                     D["driver_id"] = currentDriverList[currentPairdDriverId]['Driver_ID']
-                    currentDriverList[currentPairdDriverId]['Capacity'] += 1 #why assign twice
+                    currentDriverList[currentPairdDriverId]['Capacity'] += 1  # why assign twice
                     currentDriverList[currentPairdDriverId]['Route'] = copy.deepcopy(
                         self.AssignOrder(D, currentDriverList[currentPairdDriverId], currentPairdRestaurent))
+                    '''
+
 
                     if skipPostponement:
+                        currentPairdDriverId = self.Qing(D, currentPairdRestaurent, currentDriverList, cityName)
+                        D["driver_id"] = currentDriverList[currentPairdDriverId]['Driver_ID']
+                        currentDriverList[currentPairdDriverId]['Capacity'] += 1  # why assign twice
+                        currentDriverList[currentPairdDriverId]['Route'] = copy.deepcopy(
+                            self.AssignOrder(D, currentDriverList[currentPairdDriverId], currentPairdRestaurent))
                         currentPairdOrder.append(D)
                     else:
                         if self.Postponement(P_hat, D, maxLengthPost):
                             P_hat.append(D)
                         else:
-                            while (D['order_request_time'] - P_hat[0]['order_request_time']) >= self.t_Pmax:
+                            while (datetime.strptime(D['order_request_time'],"%d-%m-%Y %H:%M:%S" ) - datetime.strptime(P_hat[0]['order_request_time'],"%d-%m-%Y %H:%M:%S" )) >= self.t_Pmax:
                                 PairedRestaurent = copy.deepcopy(next(restaurant for restaurant in restaurantList if
                                                                       restaurant['Restaurant_ID'] == P_hat[0][
                                                                           "order_restaurant_carrier_restaurantId"]
                                                                       ))
-                                PairdDriverId = self.Qing(D,currentPairdRestaurent,currentDriverList,cityName)
+                                PairdDriverId = self.Qing(D, currentPairdRestaurent, currentDriverList, cityName)
                                 P_hat[0]['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
-                                driverList[PairdDriverId]['Capacity'] += 1
-                                driverList[PairdDriverId]['Route'] = copy.deepcopy(
+                                currentDriverList[PairdDriverId]['Capacity'] += 1
+                                currentDriverList[PairdDriverId]['Route'] = copy.deepcopy(
                                     self.AssignOrder(P_hat[0], currentDriverList[PairdDriverId], PairedRestaurent))
-                                pairdOrder.append(P_hat[0])#add finish order
+                                pairdOrder.append(P_hat[0])  # add finish order
                                 P_hat.pop(0)
                                 if len(P_hat) == 0:
                                     break
+                            print(len(P_hat))
                             if len(P_hat) >= maxLengthPost:
+                                #print("in")
                                 for order in P_hat:
                                     PairedRestaurent = copy.deepcopy(next(
                                         restaurant for restaurant in restaurantList if
                                         int(restaurant['Restaurant_ID']) == int(
                                             order["order_restaurant_carrier_restaurantId"])))
-                                    PairdDriverId = self.Qing(D,currentPairdRestaurent,currentDriverList,cityName)
+                                    PairdDriverId = self.Qing(D, currentPairdRestaurent, currentDriverList, cityName)
                                     currentDriverList[PairdDriverId]['Capacity'] += 1
                                     order['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
                                     currentDriverList[PairdDriverId]['Route'] = copy.deepcopy(
@@ -109,27 +134,29 @@ class RMDP:
                                     pairdOrder.append(order)
                                 P_hat.clear()
                             P_hat.append(D)
-                    S = self.TotalDelay(driverList)
-                currentSlack = self.Slack(driverList)
+
+                S = self.TotalDelay(currentDriverList)
+                currentSlack = self.Slack(currentDriverList)
                 if (S < delay) or ((S == delay) and (currentSlack < slack)):
                     slack = currentSlack
                     delay = S
-                    driverList = copy.deepcopy(currentDriverList)
-                    postponedOrder = copy.deepcopy(P_hat)
-                    pairdOrder = copy.deepcopy(currentPairdOrder)
-            for order in postponedOrder:
+                    newdriverList = copy.deepcopy(currentDriverList)
+                    newpostponedOrder = copy.deepcopy(P_hat)
+                    newpairdOrder = copy.deepcopy(currentPairdOrder)
+            for order in newpostponedOrder:
                 currentPairedDriver = next(
-                    driver for driver in driverList if str(driver['Driver_ID']) == str(order['driver_id']))
-                currentPairedDriverId = driverList.index(
-                    currentPairedDriver) if currentPairedDriver in driverList else -1
-                driverList[currentPairedDriverId]['Route'] = copy.deepcopy(list(filter(
-                    lambda x: (int(x['nodeType']) == 0 and x['Order_ID'] != order['Order_ID']) or (  #why no string
-                            int(x['nodeType']) == 1 and str(x['Order_ID']) != str(order['Order_ID'])),
-                    driverList[currentPairedDriverId]['Route'])))
+                    driver for driver in newdriverList if str(driver['Driver_ID']) == str(order['driver_id']))
 
-            self.updateDriver(driverList)
-            self.updatePosponedOrder(postponedOrder)
-            self.updatePairdOrder(pairdOrder)
+                currentPairedDriverId = newdriverList.index(
+                    currentPairedDriver) if currentPairedDriver in newdriverList else -1
+                newdriverList[currentPairedDriverId]['Route'] = copy.deepcopy(list(filter(
+                    lambda x: (int(x['nodeType']) == 0 and x['Order_ID'] != order['Order_ID']) or (  # why no string
+                            int(x['nodeType']) == 1 and str(x['Order_ID']) != str(order['Order_ID'])),
+                    newdriverList[currentPairedDriverId]['Route'])))
+                newdriverList[currentPairedDriverId]['Capacity'] -=1
+            self.updateDriver(newdriverList)
+            self.updatePosponedOrder(newpostponedOrder)
+            self.updatePairdOrder(newpairdOrder)
             print("Thread:", index, " is finished")
         except Exception as e:
             logging.critical(e, exc_info=True)
@@ -149,7 +176,10 @@ class RMDP:
                 tripTime += currentDistance / self.velocity
                 if 'order_request_time' in currentNode:
                     timeComplete = timedelta(seconds=tripTime) + self.time_buffer + datetime.now() + timedelta(hours=8)
-                    timeDeadline = currentNode['order_request_time'] + self.deadlineTime
+                    #print(timeComplete)
+                    #print(currentNode['order_request_time'])
+                    timeDeadline = datetime.strptime(currentNode['order_request_time'],"%d-%m-%Y %H:%M:%S" )+ self.deadlineTime
+                    #print(timeDeadline)
                     timeDelay = timeComplete - timeDeadline
                     delay += timeDelay.total_seconds()
             return max(0, delay)
@@ -248,8 +278,7 @@ class RMDP:
 
     def Postponement(self, P_hat, D, maxLengthPost):
         try:
-            if len(P_hat) < maxLengthPost or D['order_request_time'] - P_hat[0][
-                'order_request_time'] < self.t_Pmax:  # if postponement set is empty
+            if len(P_hat) < maxLengthPost or datetime.strptime(D['order_request_time'],"%d-%m-%Y %H:%M:%S" ) - datetime.strptime(P_hat[0]['order_request_time'],"%d-%m-%Y %H:%M:%S" ) < self.t_Pmax:  # if postponement set is empty
                 return True
             else:
                 return False
@@ -284,7 +313,7 @@ class RMDP:
         except Exception as e:
             logging.critical(e, exc_info=True)
 
-    def Qing(self, Ds_0, restaurant, driverlist, city):
+    def Qing(self, Ds_0, restaurant, drlist, city):
         # for episode in range(self.total_episodes):
 
         #for order in Ds_0:
@@ -295,9 +324,12 @@ class RMDP:
         agents = []  # vehicle class
         counter = 0
         low_capacity = 5
-        for v in driverList:
-            v_delay = 0
+        testlist = []
+        for v in drlist:
+            v_delay = self.deltaSDelay(v['Route'],v['Longitude'],v['Latitude'])
             v_capacity = int(v['Capacity'])
+            if low_capacity > 5:
+                print(low_capacity)
             if v_capacity > low_capacity:
                 continue
             elif v_capacity < low_capacity:
@@ -330,27 +362,45 @@ class RMDP:
             agent_pos = np.array([agent['Latitude'],agent['Longitude']])
             cityList = self.DBclient.getAllCity()
             currentcity = copy.deepcopy(
-                                        next(filter(lambda x: string(x['city']) == city, cityList),
+                                        next(filter(lambda x: str(x['City']) == city, cityList),
                                              None))
-            state = [abs(float(currentcity['Latitude']) - agent_pos[0]) / (currentcity['radius']*2 / 50),abs(float(currentcity['Longitude']) - agent_pos[1]) / (currentcity['radius']*2 / 50)]
+            state = [int(abs(float(currentcity['Latitude'])-currentcity['radius'] - agent_pos[0]) / (currentcity['radius']*2 / 50)),int(abs(float(currentcity['Longitude'])-currentcity['radius'] - agent_pos[1]) / (currentcity['radius']*2 / 50))]
             state = state[0] * 50 + state[1]
             # decide action
             exp_exp_tradeoff = random.uniform(0, 1)
+            q_setting = self.DBclient.getQlearning(city)
+            index = 0
             if exp_exp_tradeoff > 1.0:
-                action = np.argmax(self.q_table[state, :])
+
+               # action = np.argmax(q_setting['q_table'][state, :])#Change
+                if q_setting['q_table'][state][0] > q_setting['q_table'][state][1]:
+                    action = 0
+                elif q_setting['q_table'][state][0] < q_setting['q_table'][state][1]:
+                    action = 1
+                else:
+                    s = random.randint(0, 1)
+                    if s == 0:
+                        action = 0
+                    else:
+                        action = 1
             else:
                 action = random.randint(0, 1)
             if action == 1:
                 break
         # if all agent false take order
+        '''if agents == []:
+            print(low_capacity)
+            print(counter)
+            print(agents)'''
         if action == 0:
-            agent = agents[random.randint(0, len(agents))]
-            state = [abs(float(currentcity['Latitude']) - agent_pos[0]) / (currentcity['radius']*2 / 50),abs(float(currentcity['Longitude']) - agent_pos[1]) / (currentcity['radius']*2 / 50)]
+            #print(len(agents))
+            agent = agents[0]
+            state = [int(abs(float(currentcity['Latitude'])-currentcity['radius'] - agent_pos[0]) / (currentcity['radius']*2 / 50)),int(abs(float(currentcity['Longitude'])-currentcity['radius'] - agent_pos[1]) / (currentcity['radius']*2 / 50))]
             state = state[0] * 50 + state[1]
             action = 1
 
         # check if agent has order not finish yet
-        self.driver_old_status = [] #len(drivierlist),[driverId,state,reward]
+       # self.driver_old_status = [] #len(drivierlist),[driverId,state,reward]
         agent_capacity = low_capacity
         agent_id = agent['Driver_ID']
         old_state = 0
@@ -359,53 +409,84 @@ class RMDP:
         order_id = 0
         agent_index = 0
         if agent_capacity > 0:
-            for i in range(0,len(driverlist)):
-                if driver_old_status[i][0] == agent_id:
+            for i in range(0,len(drlist)):
+                if drlist[i]['Driver_ID'] == agent_id:
                     agent_index = i
-                    old_state = driver_old_status[i][1]
-                    old_reward = driver_old_status[i][2]
-                    self.q_table[old_state][1] = old_reward
-                    driver_old_status[i][1] = state
-                    driver_old_status[i][2] = self.q_table[state, 1]
+                    old_state = drlist[i]['State']
+                    old_reward = drlist[i]['Reward']
+                    q_setting['q_table'][old_state][1] = old_reward #state write back to qtable
+                    #q_setting['q_table'][old_state,1] = old_reward  # state write back to qtable
+                    drlist[i]['State'] = state #get new state status
+                    drlist[i]['Reward'] = q_setting['q_table'][state][1]#current state old reward
                     break
 
         # Take the action with environment
-        self.agent_orders_state = [] #len(driverList),np.array((5,2)) [driverid,np(5,2)],np(5,2)->[orderid,state]
-        for i in range(0,len(driverlist)):
-            if agent_orders_state[i][0] == agent_id:
-                agent_order_list = agent_orders_state[i][1]
-                for k in len(agent_order_list):
-                    if agent_order_list[k][0] == 0:
-                        agent_order_list[k][0] = Ds_0['Order_ID']
-                        agent_order_list[k][1] = state
+        #self.agent_orders_state = [] #len(driverList),np.array((5,2)) [driverid,np(5,2)],np(5,2)->[orderid,state]
+        for i in range(0,len(drlist)):
+            if drlist[i]['Driver_ID'] == agent_id:
+                agent_order_list = drlist[i]['order_list'] #get numpy array
+                for k in range (0,len(agent_order_list)):
+                    if drlist[i]['order_list'][k][0] == 0:
+                        drlist[i]['order_list'][k][0] = Ds_0['Order_ID']
+                        drlist[i]['order_list'][k][1] = state
                         break
 
 
-        new_state = [float(Ds_0['Latitude']),float(Ds_0['Longitude'])]
-        reward =  Geometry.coorDistance(rest_pos[0], rest_pos[1], delivery_pos[0], delivery_pos[1])/ ((Geometry.coorDistance(rest_pos[0], rest_pos[1], delivery_pos[0], delivery_pos[1])/self.velocity)+self.restaurantPrepareTime)# (resturant to delivery distance)/(finish time)
+        #new_state = [float(Ds_0['Latitude']),float(Ds_0['Longitude'])]
+        new_state =  [int(abs(float(currentcity['Latitude'])-currentcity['radius'] - delivery_pos[0]) / (currentcity['radius']*2 / 50)),int(abs(float(currentcity['Longitude'])-currentcity['radius'] - delivery_pos[1]) / (currentcity['radius']*2 / 50))]
+        new_state = new_state[0] * 50 + new_state[1]
+        reward =  Geometry.coorDistance(rest_pos[0], rest_pos[1], delivery_pos[0], delivery_pos[1])/ ((Geometry.coorDistance(rest_pos[0], rest_pos[1], delivery_pos[0], delivery_pos[1])*111/self.velocity)*60+20)# (resturant to delivery distance)/(finish time)
 
         # update q_table
-        self.q_table[state, action] = self.q_table[state,
-                                                   action] + self.learning_rate * (
-                                              reward + self.gamma * np.max(self.q_table[new_state, :]) -
-                                              self.q_table[state, action])
-        return agent_id
-        '''
-            # reduce episode
-            episode = self.min_epsilon + \
-                (self.max_epsilon-self.min_epsilon) * \
-                np.exp(-self.decay_rate*episode)
-            '''
-        # reward = resturant&delivery distance / finish time
+        #print(new_state)
+        action_0 = q_setting['q_table'][new_state][0]
+        action_1 = q_setting['q_table'][new_state][1]
+        max = 0
+        if action_0 > action_1:
+            max = action_0
+        elif action_0 < action_1:
+            max = action_1
+        else:
+            s = random.randint(0,1)
+            if s == 0:
+                max = action_0
+            else:
+                max = action_1
+        #print(action)
+        q_setting['q_table'][state][action] = q_setting['q_table'][state][action]+ q_setting['learning_rate']* (reward + q_setting['gamma']* max - q_setting['q_table'][state][action])
 
-    def real_reward(self, agent_id, order_id, reward):
-        self.agent_orders_state = []
+
+        return_index = 0
+        for i in range (0,len(drlist)):
+            if drlist[i]['Driver_ID'] == agent_id:
+                return_index = i
+                break
+        self.DBclient.updateQlearning(q_setting)
+        # reward = resturant&delivery distance / finish time
+        return return_index
+
+        q_setting['episode']+=1
+            # reduce episode
+        q_setting['epsilon'] = q_setting['min_epsilon'] + \
+                (q_setting['max_epsilon']-q_setting['min_epsilon']) * \
+                np.exp(-q_setting['decay_rate']*q_setting['episode'])
+
+
+
+    def real_reward(self, agent_id, order_id, reward,vehicle_List,city):
+        q_setting = self.DBclient.getQlearning(city)
         for i in len(vehicle_List):
-            if agent_id == self.agent_orders_state[i][0]:
-                agent_order = self.agent_orders_state[i][1]
-                for k in len(agent_order):
-                    if order_id == agent_order[0]:
-                        state = agent_order[1]
-                        self.q_table[state, 1] = reward
+            if agent_id == vehicle_List[i]['Driver_ID']:
+                agent_order = vehicle_List[i]['order_list']
+                for k in range(0,len(agent_order)):
+                    if order_id == vehicle_List[i]['order_list'][k][0]:
+                        state = vehicle_List[i]['order_list'][k][1]
+                        q_setting['q_table'][state][1] = reward
+                        vehicle_List[i]['order_list'][k][0] = 0
+                        vehicle_List[i]['order_list'][k][1] = 0
+                        self.DBclient.updateDriver(vehicle_List[i])
+                        self.DBclient.updateQlearning(q_setting)
+
+
 TEST = RMDP()
 TEST.generateThread()

@@ -10,6 +10,7 @@ from pymongo.errors import PyMongoError
 class Mongo_Operate:
     def __init__(self):
         self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
+        #self.DEBUG = True
         self.client = MongoClient(self.getMongoClientUrl(self.DEBUG))
         self.databaseName = self.client["RMDP"]
         self.restaurantCollection = self.databaseName["restaurant"]
@@ -17,6 +18,7 @@ class Mongo_Operate:
         self.all_citiesCollection = self.databaseName["all_cities"]
         self.country_codeCollection = self.databaseName["country_code"]
         self.orderCollection = self.databaseName["order"]
+        self.qlearningCollection = self.databaseName["Q_learning"]
 
     def getMongoClientUrl(self, DEBUG):
         if DEBUG:
@@ -104,6 +106,9 @@ class Mongo_Operate:
                     'Route': driver['Route'],
                     'Latitude': driver['Latitude'],
                     'Longitude': driver['Longitude'],
+                    'State':driver['State'],
+                    'Reward':driver['Reward'],
+                    'order_list':driver['order_list'],
                 },
             })
         except PyMongoError as py_mongo_error:
@@ -156,5 +161,34 @@ class Mongo_Operate:
                         'order_estimated_delivery_date'] if 'order_estimated_delivery_date' in order else None,
                 }
             )
+        except PyMongoError as py_mongo_error:
+            logging.critical(py_mongo_error, exc_info=True)
+
+    def getQlearning(self,cityName):
+        return self.qlearningCollection.find_one({"City": cityName})
+    def updateQlearning(self,q_setting):
+        try:
+            self.qlearningCollection.update_one({
+                'City': q_setting['City']
+            }, {
+                '$set': {
+                    'state_index': q_setting['state_index'],
+                    'action_index': q_setting['action_index'],
+                    'q_table': q_setting['q_table'],
+                    'center': q_setting['center'],
+                    'side_length': q_setting['side_length'],
+                    'learning_rate': q_setting['learning_rate'],
+                    'gamma': q_setting['gamma'],
+                    'epsilon': q_setting['epsilon'] ,
+                    'max_epislon': q_setting['max_epislon'],
+                    'min_epislon': q_setting['min_epislon'],
+                    'decay_rate':q_setting['decay_rate'],
+                    'nearBY':q_setting['nearBY'],
+                    'capacity':q_setting['capacity'],
+                    'episode':q_setting['episode']
+                }
+            }, upsert=False)
+        except Exception as e:
+            logging.critical(e, exc_info=True)
         except PyMongoError as py_mongo_error:
             logging.critical(py_mongo_error, exc_info=True)

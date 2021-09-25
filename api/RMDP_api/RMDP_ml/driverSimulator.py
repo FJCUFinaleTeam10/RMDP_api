@@ -56,8 +56,9 @@ class driverSimulator:
                         else:
                             currentOrder['order_status'] = 'headToCus'
                             currentOrder['order_restaurant_carrier_date'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                            currentDriver['Capacity'] -= 1
                         self.DBclient.updateOrder(targetDestination)
-                        currentDriver['Capacity'] -= 1
+                        #currentDriver['Capacity'] -= 1
 
                         if currentDriver['Route'] is None:
                             currentDriver['Velocity'] = 0
