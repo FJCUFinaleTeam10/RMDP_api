@@ -72,7 +72,7 @@ class RMDP:
                 self.DBclient.updateOrder(forder)
 
             driverList = self.DBclient.getDriverBaseOnCity(cityName['City'])
-            unAssignOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "unassigned")  # get unassign order
+            unAssignOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "unassigned")  # get unassigned order
             postponedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "waiting")  # get postpone order
 
             S = 0
