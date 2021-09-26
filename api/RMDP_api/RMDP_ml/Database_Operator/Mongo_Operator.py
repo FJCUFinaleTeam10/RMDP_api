@@ -134,6 +134,8 @@ class Mongo_Operate:
                     'Order_ID': order['Order_ID'],
                     'order_estimated_delivery_date': order[
                         'order_estimated_delivery_date'] if 'order_estimated_delivery_date' in order else None,
+                    'Qtable_position': order['Qtable_position'],
+                    'Qtable_updated': order['Qtable_updated']
                 }
             }, upsert=False)
         except Exception as e:
@@ -159,6 +161,8 @@ class Mongo_Operate:
                     'Order_ID': order['Order_ID'],
                     'order_estimated_delivery_date': order[
                         'order_estimated_delivery_date'] if 'order_estimated_delivery_date' in order else None,
+                    'Qtable_position': order['Qtable_position'],
+                    'Qtable_updated': order['Qtable_updated']
                 }
             )
         except PyMongoError as py_mongo_error:

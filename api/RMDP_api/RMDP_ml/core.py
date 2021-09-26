@@ -15,7 +15,7 @@ class RMDP:
 
     def __init__(self):
         self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
-        # self.DEBUG = True
+        #self.DEBUG = True
         self.S = 0
         self.time_buffer = timedelta(minutes=0)
         self.t_Pmax = timedelta(seconds=40)
@@ -48,17 +48,15 @@ class RMDP:
             maxLengthPost = 5
 
             restaurantList = self.DBclient.getRestaurantListBaseOnCity(cityName['City'])
-            driverList = self.DBclient.getDriverBaseOnCity(cityName['City'])
 
             filterrestTaurantCode = list(
                 map(lambda x: int(x['Restaurant_ID']), restaurantList))  # set all restaurant_id to int
 
-            finishOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "headToCus")
-
+            finishedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "delivered")
+            finishOrder  =  list(order for order in finishedOrder if order['Qtable_updated'] == 0)
             q_setting = self.DBclient.getQlearning(cityName['City'])
 
             for forder in finishOrder:
-                forder['order_status'] = 'finished'
                 getrestaurant = next(
                     restaurant for restaurant in restaurantList if
                     int(restaurant['Restaurant_ID']) == int(forder["order_restaurant_carrier_restaurantId"]))
@@ -67,9 +65,8 @@ class RMDP:
 
                 distance = Geometry.coorDistance(getrestaurant['Latitude'], getrestaurant['Longitude'],
                                                  forder['Latitude'], forder['Longitude'])  # meter
-                reward = distance / time.total_seconds()  # meter/second
-                self.real_reward(forder['driver_id'], forder['Order_ID'], reward, driverList, q_setting)
-                self.DBclient.updateOrder(forder)
+                reward = distance / (time.total_seconds()/60)  # meter/second
+                self.real_reward(forder,reward, q_setting)
 
             driverList = self.DBclient.getDriverBaseOnCity(cityName['City'])
             unAssignOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "unassigned")  # get unassigned order
@@ -128,7 +125,6 @@ class RMDP:
                                 P_hat.pop(0)
                                 if len(P_hat) == 0:
                                     break
-                            print(len(P_hat))
                             if len(P_hat) >= maxLengthPost:
                                 # print("in")
                                 for order in P_hat:
@@ -440,6 +436,7 @@ class RMDP:
 
             # Take the action with environment
             # self.agent_orders_state = [] #len(driverList),np.array((5,2)) [driverid,np(5,2)],np(5,2)->[orderid,state]
+            '''
             for i in range(0, len(drlist)):
                 if drlist[i]['Driver_ID'] == agent_id:
                     agent_order_list = drlist[i]['order_list']  # get numpy array
@@ -448,22 +445,16 @@ class RMDP:
                             drlist[i]['order_list'][k][0] = Ds_0['Order_ID']
                             drlist[i]['order_list'][k][1] = state
                             break
+            '''
+            Ds_0['Qtable_position'] = state
 
             # new_state = [float(Ds_0['Latitude']),float(Ds_0['Longitude'])]
             new_state = [
                 int(abs(float(city['Latitude']) - city['radius'] - delivery_pos[0]) / (city['radius'] * 2 / 50)),
                 int(abs(float(city['Longitude']) - city['radius'] - delivery_pos[1]) / (city['radius'] * 2 / 50))]
             new_state = new_state[0] * 50 + new_state[1]
-            reward = Geometry.coorDistance(rest_pos[0], rest_pos[1], delivery_pos[0], delivery_pos[1]) / ((
-                                                                                                                  Geometry.coorDistance(
-                                                                                                                      rest_pos[
-                                                                                                                          0],
-                                                                                                                      rest_pos[
-                                                                                                                          1],
-                                                                                                                      delivery_pos[
-                                                                                                                          0],
-                                                                                                                      delivery_pos[
-                                                                                                                          1]) * 111 / self.velocity) * 60 + 20)  # (resturant to delivery distance)/(finish time)
+            reward = Geometry.coorDistance(rest_pos[0], rest_pos[1], delivery_pos[0], delivery_pos[1]) / (( Geometry.coorDistance(rest_pos[0],
+                    rest_pos[1],delivery_pos[0],delivery_pos[1]) * 111 / self.velocity) * 60 + 20)  # (resturant to delivery distance)/(finish time)
 
             # update q_table
             # print(new_state)
@@ -494,22 +485,26 @@ class RMDP:
                                    (q_setting['max_epislon'] - q_setting['min_epislon']) * \
                                    np.exp(-q_setting['decay_rate'] * q_setting['episode'])
             self.DBclient.updateQlearning(q_setting)
-            print(q_setting['epsilon'])
             return return_index
         except Exception as e:
             logging.critical(e, exc_info=True)
 
-    def real_reward(self, agent_id, order_id, reward, vehicle_List, q_setting):
+    def real_reward(self, order, reward, q_setting):
         try:
+            '''
             v_index = next((index for (index, d) in enumerate(vehicle_List) if d['Driver_ID'] == agent_id), None)
             for k in range(0, 5):
                 if order_id == vehicle_List[v_index]['order_list'][k][0]:
                     state = vehicle_List[v_index]['order_list'][k][1]
                     q_setting['q_table'][state][1] = reward
-                    vehicle_List[i]['order_list'][k][0] = 0
-                    vehicle_List[i]['order_list'][k][1] = 0
+                    vehicle_List[v_index]['order_list'][k][0] = 0
+                    vehicle_List[v_index]['order_list'][k][1] = 0
                     break
             self.DBclient.updateDriver(vehicle_List[v_index])
+            '''
+            q_setting['q_table'][order['Qtable_position']][1] = reward
+            order['Qtable_updated'] = 1
+            self.DBclient.updateOrder(order)
             self.DBclient.updateQlearning(q_setting)
         except Exception as e:
             logging.critical(e, exc_info=True)

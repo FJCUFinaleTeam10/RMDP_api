@@ -46,7 +46,8 @@ class userSimulator:
                     filteredRestaurantId[random.randint(0, len(filteredRestaurantId) - 1)]['Restaurant_ID'],
                 'order_status': 'unassigned',
                 'Order_ID': str(uuid.uuid4()),
-                'Qtable_position': 0
+                'Qtable_position': 0,
+                'Qtable_updated':0
             })
         except Exception as e:
             logging.critical(e, exc_info=True)
