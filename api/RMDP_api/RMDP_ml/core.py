@@ -5,7 +5,7 @@ import itertools
 import math
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from random import random
+import random
 
 import numpy as np
 
@@ -49,7 +49,7 @@ class RMDP:
             pairdOrder = []
             maxLengthPost = 5
             restaurantList = self.DBclient.getRestaurantListBaseOnCity(cityName['City'])
-            driverList = self.DBclient.getDriverBaseOnCity(cityName)
+            driverList = self.DBclient.getDriverBaseOnCity(cityName['City'])
             filterrestTaurantCode = list(
                 map(lambda x: int(x['Restaurant_ID']), restaurantList))  # set all restaurant_id to int
 
@@ -131,10 +131,6 @@ class RMDP:
                     lambda x: (int(x['nodeType']) == 0 and x['Order_ID'] != order['Order_ID']) or (  # why no string
                             int(x['nodeType']) == 1 and str(x['Order_ID']) != str(order['Order_ID'])),
                     driverList[currentPairedDriverId]['Route'])))
-
-                currentPairdRestaurent = next(restaurant for restaurant in restaurantList if
-                                              restaurant['Restaurant_ID'] == D[
-                                                  "order_restaurant_carrier_restaurantId"])
 
             self.updateDriver(driverList)
             self.updatePosponedOrder(postponedOrder)
@@ -270,9 +266,9 @@ class RMDP:
 
     def updateDriver(self, driverList):
         try:
-            for driver in list(filter(lambda driver: len(driver['Route']) > 0, driverList)):
-                driver['Velocity'] = self.velocity
-                self.DBclient.updateDriver(driver)
+            for iter in [driver for driver in driverList if len(driver['Route']) > 0]:
+                iter['Velocity'] = self.velocity
+                self.DBclient.updateDriver(iter)
         except Exception as e:
             logging.critical(e, exc_info=True)
 
@@ -297,125 +293,124 @@ class RMDP:
             logging.critical(e, exc_info=True)
 
     def Qing(self, Ds_0, restaurant, driverlist, city):
-        # for episode in range(self.total_episodes):
+        try:
+            # for episode in range(self.total_episodes):
 
-        # for order in Ds_0:
-        rest_pos = [float(restaurant['Latitude']), float(restaurant['Longitude'])]
-        delivery_pos = np.array([float(Ds_0['Latitude']), float(Ds_0['Longitude'])])
-        agents_dis = np.zeros((5, 1))  # 存距離
-        agents_delay = np.zeros((5, 1))  # 存delay
-        agents = []  # vehicle class
-        counter = 0
-        low_capacity = 5
-        for v in driverlist:
-            v_delay = 0
-            v_capacity = int(v['Capacity'])
-            if v_capacity > low_capacity:
-                continue
-            elif v_capacity < low_capacity:
-                low_capacity = v_capacity
-                agents = []
-                counter = 0
-                agents_dis = np.zeros((5, 1))  # nearBY
-                agents_delay = np.zeros((5, 1))
-            vehicle_pos = [float(v['Latitude']), float(v['Longitude'])]
-            dist = Geometry.coorDistance(vehicle_pos[0], vehicle_pos[1], rest_pos[0], rest_pos[1])
-            if counter < 5:
-                agents_dis[counter] = dist
-                agents_delay[counter] = v_delay
-                agents.append(v)
-                counter += 1
-            else:
-                index = np.argmax(agents_delay)
-                if agents_delay[index] > v_delay:
-                    agents_delay[index] = v_delay
-                    agents_dis[index] = dist
-                    agents[index] = v
-                elif agents_delay[index] == v_delay:
-                    if agents_dis[index] > dist:
+            # for order in Ds_0:
+            rest_pos = [float(restaurant['Latitude']), float(restaurant['Longitude'])]
+            delivery_pos = np.array([float(Ds_0['Latitude']), float(Ds_0['Longitude'])])
+            agents_dis = np.zeros((5, 1))  # 存距離
+            agents_delay = np.zeros((5, 1))  # 存delay
+            agents = []  # vehicle class
+            counter = 0
+            low_capacity = 5
+            for v in driverlist:
+                v_delay = 0
+                v_capacity = int(v['Capacity'])
+                if v_capacity > low_capacity:
+                    continue
+                elif v_capacity < low_capacity:
+                    low_capacity = v_capacity
+                    agents = []
+                    counter = 0
+                    agents_dis = np.zeros((5, 1))  # nearBY
+                    agents_delay = np.zeros((5, 1))
+                vehicle_pos = [float(v['Latitude']), float(v['Longitude'])]
+                dist = Geometry.coorDistance(vehicle_pos[0], vehicle_pos[1], rest_pos[0], rest_pos[1])
+                if counter < 5:
+                    agents_dis[counter] = dist
+                    agents_delay[counter] = v_delay
+                    agents.append(v)
+                    counter += 1
+                else:
+                    index = np.argmax(agents_delay)
+                    if agents_delay[index] > v_delay:
                         agents_delay[index] = v_delay
                         agents_dis[index] = dist
                         agents[index] = v
-        action = 0
-        agent = 0
-        for agent in agents:
-            agent_pos = np.array([agent['Latitude'], agent['Longitude']])
-            cityList = self.DBclient.getAllCity()
-            currentcity = copy.deepcopy(next(filter(lambda x: string(x['city']) == city, cityList), None))
-            state = [abs(float(currentcity['Latitude']) - agent_pos[0]) / (currentcity['radius'] * 2 / 50),
-                     abs(float(currentcity['Longitude']) - agent_pos[1]) / (currentcity['radius'] * 2 / 50)]
-            state = state[0] * 50 + state[1]
-            # decide action
-            exp_exp_tradeoff = random.uniform(0, 1)
-            action = np.argmax(self.q_table[state, :]) if exp_exp_tradeoff > 1.0 else random.randint(0, 1)
-
-            if action == 1:
-                break
-        # if all agent false take order
-        if action == 0:
-            agent = agents[random.randint(0, len(agents))]
-            state = [abs(float(currentcity['Latitude']) - agent_pos[0]) / (currentcity['radius'] * 2 / 50),
-                     abs(float(currentcity['Longitude']) - agent_pos[1]) / (currentcity['radius'] * 2 / 50)]
-            state = state[0] * 50 + state[1]
-            action = 1
-
-        # check if agent has order not finish yet
-        self.driver_old_status = []  # len(drivierlist),[driverId,state,reward]
-        agent_capacity = low_capacity
-        agent_id = agent['Driver_ID']
-        old_state = 0
-        old_reward = 0
-        old_state = 0
-        order_id = 0
-        agent_index = 0
-        if agent_capacity > 0:
-            for i in range(0, len(driverlist)):
-                if driver_old_status[i][0] == agent_id:
-                    agent_index = i
-                    old_state = driver_old_status[i][1]
-                    old_reward = driver_old_status[i][2]
-                    self.q_table[old_state][1] = old_reward
-                    driver_old_status[i][1] = state
-                    driver_old_status[i][2] = self.q_table[state, 1]
+                    elif agents_delay[index] == v_delay:
+                        if agents_dis[index] > dist:
+                            agents_delay[index] = v_delay
+                            agents_dis[index] = dist
+                            agents[index] = v
+            action = 0
+            agent = 0
+            for agent in agents:
+                agent_pos = np.array([agent['Latitude'], agent['Longitude']])
+                state = [abs(float(city['Latitude']) - agent_pos[0]) / (city['radius'] * 2 / 50),
+                         abs(float(city['Longitude']) - agent_pos[1]) / (city['radius'] * 2 / 50)]
+                state = state[0] * 50 + state[1]
+                # decide action
+                exp_exp_tradeoff = random.uniform(0, 1)
+                action = np.argmax(self.q_table[state, :]) if exp_exp_tradeoff > 1.0 else random.randint(0, 1)
+                if action == 1:
                     break
+            # if all agent false take order
+            if action == 0:
+                agent = agents[random.randint(0, len(agents)-1)]
+                state = [abs(float(city['Latitude']) - agent_pos[0]) / (city['radius'] * 2 / 50),
+                         abs(float(city['Longitude']) - agent_pos[1]) / (city['radius'] * 2 / 50)]
+                state = state[0] * 50 + state[1]
+                action = 1
 
-        # Take the action with environment
-        self.agent_orders_state = []  # len(driverList),np.array((5,2)) [driverid,np(5,2)],np(5,2)->[orderid,state]
-        for i in range(0, len(driverlist)):
-            if agent_orders_state[i][0] == agent_id:
-                agent_order_list = agent_orders_state[i][1]
-                for k in len(agent_order_list):
-                    if agent_order_list[k][0] == 0:
-                        agent_order_list[k][0] = Ds_0['Order_ID']
-                        agent_order_list[k][1] = state
+            # check if agent has order not finish yet
+            self.driver_old_status = []  # len(drivierlist),[driverId,state,reward]
+            agent_capacity = low_capacity
+            agent_id = agent['Driver_ID']
+            old_state = 0
+            old_reward = 0
+            old_state = 0
+            order_id = 0
+            agent_index = 0
+            if agent_capacity > 0:
+                for i in range(0, len(driverlist)):
+                    if driver_old_status[i][0] == agent_id:
+                        agent_index = i
+                        old_state = driver_old_status[i][1]
+                        old_reward = driver_old_status[i][2]
+                        self.q_table[old_state][1] = old_reward
+                        driver_old_status[i][1] = state
+                        driver_old_status[i][2] = self.q_table[state, 1]
                         break
 
-        new_state = [float(Ds_0['Latitude']), float(Ds_0['Longitude'])]
-        reward = Geometry.coorDistance(rest_pos[0], rest_pos[1], delivery_pos[0], delivery_pos[1]) / ((
-                                                                                                              Geometry.coorDistance(
-                                                                                                                  rest_pos[
-                                                                                                                      0],
-                                                                                                                  rest_pos[
-                                                                                                                      1],
-                                                                                                                  delivery_pos[
-                                                                                                                      0],
-                                                                                                                  delivery_pos[
-                                                                                                                      1]) / self.velocity) + self.restaurantPrepareTime)  # (resturant to delivery distance)/(finish time)
+            # Take the action with environment
+            self.agent_orders_state = []  # len(driverList),np.array((5,2)) [driverid,np(5,2)],np(5,2)->[orderid,state]
+            for i in range(0, len(driverlist)):
+                if agent_orders_state[i][0] == agent_id:
+                    agent_order_list = agent_orders_state[i][1]
+                    for k in len(agent_order_list):
+                        if agent_order_list[k][0] == 0:
+                            agent_order_list[k][0] = Ds_0['Order_ID']
+                            agent_order_list[k][1] = state
+                            break
 
-        # update q_table
-        self.q_table[state, action] = self.q_table[state,
-                                                   action] + self.learning_rate * (
-                                              reward + self.gamma * np.max(self.q_table[new_state, :]) -
-                                              self.q_table[state, action])
-        return agent_id
-        '''
-            # reduce episode
-            episode = self.min_epsilon + \
-                (self.max_epsilon-self.min_epsilon) * \
-                np.exp(-self.decay_rate*episode)
+            new_state = [float(Ds_0['Latitude']), float(Ds_0['Longitude'])]
+            reward = Geometry.coorDistance(rest_pos[0], rest_pos[1], delivery_pos[0], delivery_pos[1]) / ((
+                                                                                                                  Geometry.coorDistance(
+                                                                                                                      rest_pos[
+                                                                                                                          0],
+                                                                                                                      rest_pos[
+                                                                                                                          1],
+                                                                                                                      delivery_pos[
+                                                                                                                          0],
+                                                                                                                      delivery_pos[
+                                                                                                                          1]) / self.velocity) + self.restaurantPrepareTime)  # (resturant to delivery distance)/(finish time)
+
+            # update q_table
+            self.q_table[state, action] = self.q_table[state,
+                                                       action] + self.learning_rate * (
+                                                  reward + self.gamma * np.max(self.q_table[new_state, :]) -
+                                                  self.q_table[state, action])
+            return agent_id
             '''
-        # reward = resturant&delivery distance / finish time
-
+                # reduce episode
+                episode = self.min_epsilon + \
+                    (self.max_epsilon-self.min_epsilon) * \
+                    np.exp(-self.decay_rate*episode)
+                '''
+            # reward = resturant&delivery distance / finish time
+        except Exception as e:
+            logging.critical(e, exc_info=True)
     def real_reward(self, agent_id, order_id, reward):
         self.agent_orders_state = []
         for i in len(vehicle_List):
