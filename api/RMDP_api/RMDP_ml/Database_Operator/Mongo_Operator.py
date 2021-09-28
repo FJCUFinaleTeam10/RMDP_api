@@ -9,7 +9,8 @@ from pymongo.errors import PyMongoError
 
 class Mongo_Operate:
     def __init__(self):
-        self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
+        self.DEBUG = True
+        # self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
         self.client = MongoClient(self.getMongoClientUrl(self.DEBUG))
         self.databaseName = self.client["RMDP"]
         self.restaurantCollection = self.databaseName["restaurant"]
