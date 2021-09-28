@@ -6,7 +6,6 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 # from Math import Geometry
 
-
 from Database_Operator.Mongo_Operator import Mongo_Operate
 from Math import Geometry
 
@@ -27,23 +26,34 @@ class driverSimulator:
                 threads.append(executor.submit(self.updateDriverLocation, index=i, cityName=(cityList[i]['City'])))
         logging.info("task completed")
 
-    def updateDriverLocation(self, index, cityName):
+    def updateDriverLocation(self, cityName):
         try:
             driverList = self.DBclient.getHasOrderDriverBaseOnCity(cityName)
+
             restaurantIdList = list(
                 map(lambda x: int(x['Restaurant_ID']), self.DBclient.getRestaurantIDBaseOnCity(cityName)))
+
             orderList = self.DBclient.getPairedOrderBaseOnCity(restaurantIdList)
+
             if len(driverList) > 0:
                 for currentDriver in driverList:
-
                     targetDestination = currentDriver['Route'][0]
+
+                    # distance between target distance and current driver
                     DistanceRemain = Geometry.coorDistance(currentDriver['Latitude'],
                                                            currentDriver['Longitude'],
                                                            targetDestination['Latitude'],
                                                            targetDestination['Longitude'])
+
+                    # the distance of each update time
                     DistanceTraveled = currentDriver['Velocity'] * self.updateTime
 
-                    if DistanceTraveled > DistanceRemain:
+                    # transform distance to degree
+                    DegreeTraveled = DistanceTraveled / (111 * 1000)
+
+                    # the driver update distance longer than next destination
+                    if DistanceTraveled >= DistanceRemain:
+
                         currentDriver['Latitude'] = targetDestination['Latitude']
                         currentDriver['Longitude'] = targetDestination['Longitude']
                         travelLocation = currentDriver['Route'].pop(0)
@@ -63,15 +73,17 @@ class driverSimulator:
                         if currentDriver['Route'] is None:
                             currentDriver['Velocity'] = 0
                     else:
-                        updatedLon, updatedLat = Geometry.interSectionCircleAndLine(currentDriver['Longitude'],
-                                                                                    currentDriver['Latitude'],
-                                                                                    DistanceTraveled,
+
+                        updatedLon, updatedLat = Geometry.interSectionCircleAndLine(currentDriver['Latitude'],
                                                                                     currentDriver['Longitude'],
+                                                                                    DegreeTraveled,
                                                                                     currentDriver['Latitude'],
-                                                                                    targetDestination['Longitude'],
-                                                                                    targetDestination['Latitude'])
+                                                                                    currentDriver['Longitude'],
+                                                                                    targetDestination['Latitude'],
+                                                                                    targetDestination['Longitude'])
                         currentDriver['Latitude'] = updatedLon
                         currentDriver['Longitude'] = updatedLat
+
                     self.DBclient.updateDriver(currentDriver)
         except Exception as e:
             logging.critical(e, exc_info=True)

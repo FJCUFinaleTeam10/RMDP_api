@@ -2,13 +2,11 @@ import logging
 import math
 import random
 from pprint import pprint
+
 from numpy import ones, vstack
 from numpy.linalg import lstsq
-import numpy as np
 from shapely.geometry import LineString
 from shapely.geometry import Point
-from numpy import ones, vstack
-from numpy.linalg import lstsq
 
 
 def lineSolution(x1: float, x2: float, y1: float, y2: float):
@@ -42,6 +40,7 @@ def coorDistance(lat1, lon1, lat2, lon2):
         p = math.pi / 180
         a = 0.5 - math.cos((lat2 - lat1) * p) / 2 + math.cos(lat1 * p) * math.cos(lat2 * p) * (
                 1 - math.cos((lon2 - lon1) * p)) / 2
-        return 12742 * math.asin(math.sqrt(a))  # 2*R*asin...
+        return 12742 * math.asin(math.sqrt(a))  # 2*R*asin... '''
+
     except Exception as e:
         logging.critical(e, exc_info=True)
