@@ -9,11 +9,11 @@ from datetime import datetime
 from Database_Operator.Mongo_Operator import Mongo_Operate
 from Math import Geometry
 
+
 class driverSimulator:
     def __init__(self):
         self.totalCurrentWorker = 2
-        DEBUG = True
-        # self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
+        self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
         self.DBclient = Mongo_Operate()
         self.updateTime = 1
 
@@ -26,7 +26,7 @@ class driverSimulator:
                 threads.append(executor.submit(self.updateDriverLocation, index=i, cityName=(cityList[i]['City'])))
         logging.info("task completed")
 
-    def updateDriverLocation(self, index, cityName):
+    def updateDriverLocation(self, cityName):
         try:
             driverList = self.DBclient.getHasOrderDriverBaseOnCity(cityName)
 
@@ -72,15 +72,6 @@ class driverSimulator:
                         if currentDriver['Route'] is None:
                             currentDriver['Velocity'] = 0
                     else:
-                        ''' updatedLon, updatedLat = Geometry.interSectionCircleAndLine(currentDriver['Longitude'],
-                                                                                    currentDriver['Latitude'],
-                                                                                    DistanceTraveled,
-                                                                                    currentDriver['Longitude'],
-                                                                                    currentDriver['Latitude'],
-                                                                                    targetDestination['Longitude'],
-                                                                                    targetDestination['Latitude'])
-                        currentDriver['Latitude'] = updatedLon
-                        currentDriver['Longitude'] = updatedLat '''
 
                         updatedLon, updatedLat = Geometry.interSectionCircleAndLine(currentDriver['Latitude'],
                                                                                     currentDriver['Longitude'],
@@ -95,7 +86,7 @@ class driverSimulator:
                     self.DBclient.updateDriver(currentDriver)
         except Exception as e:
             logging.critical(e, exc_info=True)
-driverSimulator
+
 
 test = driverSimulator()
 test.generateThread()
