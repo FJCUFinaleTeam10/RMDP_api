@@ -77,10 +77,9 @@ class RMDP:
                 skipPostponement = True
                 unAssignOrder = copy.deepcopy(postponedOrder)
                 postponedOrder.clear()
-                '''
             if maxLengthPost <= len(unAssignOrder):
                 maxLengthPost = len(unAssignOrder) + 1
-            '''
+
             for permutation in itertools.permutations(unAssignOrder):
                 currentDriverList = copy.deepcopy(driverList)
                 P_hat = copy.deepcopy(postponedOrder)  # waitting order
@@ -148,23 +147,38 @@ class RMDP:
                 if (S < delay) or ((S == delay) and (currentSlack < slack)):
                     slack = currentSlack
                     delay = S
-                    newdriverList = copy.deepcopy(currentDriverList)
-                    newpostponedOrder = copy.deepcopy(P_hat)
-                    newpairdOrder = copy.deepcopy(currentPairdOrder)
-            for order in newpostponedOrder:
+                    driverList = copy.deepcopy(currentDriverList)
+                    postponedOrder = copy.deepcopy(P_hat)
+                    pairdOrder = copy.deepcopy(currentPairdOrder)
+            for order in postponedOrder:
+                '''
                 currentPairedDriver = next(
-                    driver for driver in newdriverList if str(driver['Driver_ID']) == str(order['driver_id']))
-
-                currentPairedDriverId = newdriverList.index(
-                    currentPairedDriver) if currentPairedDriver in newdriverList else -1
-                newdriverList[currentPairedDriverId]['Route'] = copy.deepcopy(list(filter(
+                    driver for driver in driverList if str(driver['Driver_ID']) == str(order['driver_id']))
+                '''
+                index =0
+                for driver in range(0,len(driverList)):
+                    if driverList[driver]['Driver_ID'] == order['driver_id']:
+                        index = driver
+                        break
+                '''
+                currentPairedDriverId = driverList.index(
+                    currentPairedDriver) if currentPairedDriver in driverList else -1
+                '''
+                '''
+                driverList[currentPairedDriverId]['Route'] = copy.deepcopy(list(filter(
                     lambda x: (int(x['nodeType']) == 0 and x['Order_ID'] != order['Order_ID']) or (  # why no string
                             int(x['nodeType']) == 1 and str(x['Order_ID']) != str(order['Order_ID'])),
-                    newdriverList[currentPairedDriverId]['Route'])))
-                newdriverList[currentPairedDriverId]['Capacity'] -= 1
-            self.updateDriver(newdriverList)
-            self.updatePosponedOrder(newpostponedOrder)
-            self.updatePairdOrder(newpairdOrder)
+                    driverList[currentPairedDriverId]['Route'])))
+                driverList[currentPairedDriverId]['Capacity'] -= 1
+                '''
+                driverList[index]['Route'] = copy.deepcopy(list(filter(
+                    lambda x: (int(x['nodeType']) == 0 and x['Order_ID'] != order['Order_ID']) or (  # why no string
+                            int(x['nodeType']) == 1 and str(x['Order_ID']) != str(order['Order_ID'])),
+                    driverList[index]['Route'])))
+                driverList[index]['Capacity'] -= 1
+            self.updateDriver(driverList)
+            self.updatePosponedOrder(postponedOrder)
+            self.updatePairdOrder(pairdOrder)
             print("Thread:", index, " is finished")
         except Exception as e:
             logging.critical(e, exc_info=True)
@@ -481,9 +495,7 @@ class RMDP:
 
             q_setting['episode'] += 1
             # reduce episode
-            q_setting['epsilon'] = q_setting['min_epislon'] + \
-                                   (q_setting['max_epislon'] - q_setting['min_epislon']) * \
-                                   np.exp(-q_setting['decay_rate'] * q_setting['episode'])
+            q_setting['epsilon'] = q_setting['min_epislon'] +(q_setting['max_epislon'] - q_setting['min_epislon']) * np.exp(-q_setting['decay_rate'] * q_setting['episode'])
             self.DBclient.updateQlearning(q_setting)
             return return_index
         except Exception as e:
