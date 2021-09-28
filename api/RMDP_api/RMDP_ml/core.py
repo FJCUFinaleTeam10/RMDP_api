@@ -15,7 +15,7 @@ class RMDP:
 
     def __init__(self):
         self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
-        #self.DEBUG = True
+        # self.DEBUG = True
         self.S = 0
         self.time_buffer = timedelta(minutes=0)
         self.t_Pmax = timedelta(seconds=40)
@@ -53,7 +53,7 @@ class RMDP:
                 map(lambda x: int(x['Restaurant_ID']), restaurantList))  # set all restaurant_id to int
 
             finishedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "delivered")
-            finishOrder  =  list(order for order in finishedOrder if order['Qtable_updated'] == 0)
+            finishOrder = list(order for order in finishedOrder if order['Qtable_updated'] == 0)
             q_setting = self.DBclient.getQlearning(cityName['City'])
 
             for forder in finishOrder:
@@ -61,15 +61,18 @@ class RMDP:
                     restaurant for restaurant in restaurantList if
                     int(restaurant['Restaurant_ID']) == int(forder["order_restaurant_carrier_restaurantId"]))
 
-                time = datetime.strptime(forder['order_restaurant_carrier_date'], "%Y-%m-%d %H:%M:%S") - datetime.strptime(forder['order_request_time'], "%d-%m-%Y %H:%M:%S")
+                time = datetime.strptime(forder['order_restaurant_carrier_date'],
+                                         "%Y-%m-%d %H:%M:%S") - datetime.strptime(forder['order_request_time'],
+                                                                                  "%d-%m-%Y %H:%M:%S")
 
                 distance = Geometry.coorDistance(getrestaurant['Latitude'], getrestaurant['Longitude'],
                                                  forder['Latitude'], forder['Longitude'])  # meter
-                reward = distance / (time.total_seconds()/60)  # meter/second
-                self.real_reward(forder,reward, q_setting)
+                reward = distance / (time.total_seconds() / 60)  # meter/second
+                self.real_reward(forder, reward, q_setting)
 
             driverList = self.DBclient.getDriverBaseOnCity(cityName['City'])
-            unAssignOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "unassigned")  # get unassigned order
+            unAssignOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode,
+                                                             "unassigned")  # get unassigned order
             postponedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "waiting")  # get postpone order
 
             S = 0
@@ -80,10 +83,16 @@ class RMDP:
             if maxLengthPost <= len(unAssignOrder):
                 maxLengthPost = len(unAssignOrder) + 1
 
+            newDriverList = []
+            newPospondedOrderList = []
+            newPairedOrderList = []
+
             for permutation in itertools.permutations(unAssignOrder):
+
                 currentDriverList = copy.deepcopy(driverList)
                 P_hat = copy.deepcopy(postponedOrder)  # waitting order
                 currentPairdOrder = copy.deepcopy(pairdOrder)
+
                 for D in permutation:
                     currentPairdRestaurent = next(restaurant for restaurant in restaurantList if
                                                   restaurant['Restaurant_ID'] == D[
@@ -147,16 +156,21 @@ class RMDP:
                 if (S < delay) or ((S == delay) and (currentSlack < slack)):
                     slack = currentSlack
                     delay = S
-                    driverList = copy.deepcopy(currentDriverList)
-                    postponedOrder = copy.deepcopy(P_hat)
-                    pairdOrder = copy.deepcopy(currentPairdOrder)
+                    newDriverList = copy.deepcopy(currentDriverList)
+                    newPospondedOrderList = copy.deepcopy(P_hat)
+                    newPairedOrderList = copy.deepcopy(currentPairdOrder)
+
+            driverList = copy.deepcopy(newDriverList)
+            postponedOrder = copy.deepcopy(newPospondedOrderList)
+            pairdOrder = copy.deepcopy(newPairedOrderList)
+
             for order in postponedOrder:
                 '''
                 currentPairedDriver = next(
                     driver for driver in driverList if str(driver['Driver_ID']) == str(order['driver_id']))
                 '''
-                index =0
-                for driver in range(0,len(driverList)):
+                index = 0
+                for driver in range(0, len(driverList)):
                     if driverList[driver]['Driver_ID'] == order['driver_id']:
                         index = driver
                         break
@@ -467,8 +481,10 @@ class RMDP:
                 int(abs(float(city['Latitude']) - city['radius'] - delivery_pos[0]) / (city['radius'] * 2 / 50)),
                 int(abs(float(city['Longitude']) - city['radius'] - delivery_pos[1]) / (city['radius'] * 2 / 50))]
             new_state = new_state[0] * 50 + new_state[1]
-            reward = Geometry.coorDistance(rest_pos[0], rest_pos[1], delivery_pos[0], delivery_pos[1]) / (( Geometry.coorDistance(rest_pos[0],
-                    rest_pos[1],delivery_pos[0],delivery_pos[1]) * 111 / self.velocity) * 60 + 20)  # (resturant to delivery distance)/(finish time)
+            reward = Geometry.coorDistance(rest_pos[0], rest_pos[1], delivery_pos[0], delivery_pos[1]) / (
+                        (Geometry.coorDistance(rest_pos[0],
+                                               rest_pos[1], delivery_pos[0], delivery_pos[
+                                                   1]) * 111 / self.velocity) * 60 + 20)  # (resturant to delivery distance)/(finish time)
 
             # update q_table
             # print(new_state)
@@ -495,7 +511,9 @@ class RMDP:
 
             q_setting['episode'] += 1
             # reduce episode
-            q_setting['epsilon'] = q_setting['min_epislon'] +(q_setting['max_epislon'] - q_setting['min_epislon']) * np.exp(-q_setting['decay_rate'] * q_setting['episode'])
+            q_setting['epsilon'] = q_setting['min_epislon'] + (
+                        q_setting['max_epislon'] - q_setting['min_epislon']) * np.exp(
+                -q_setting['decay_rate'] * q_setting['episode'])
             self.DBclient.updateQlearning(q_setting)
             return return_index
         except Exception as e:

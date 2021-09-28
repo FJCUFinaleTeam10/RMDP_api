@@ -123,17 +123,14 @@ class Mongo_Operate:
                     'order_approved_at': order['order_approved_at'] if 'order_approved_at' in order else None,
                     'Longitude': order['Longitude'],
                     'Latitude': order['Latitude'],
-                    'order_delivered_customer_date': order[
-                        'order_delivered_customer_date'] if 'order_delivered_customer_date' in order else None,
+                    'order_delivered_customer_date': order['order_delivered_customer_date'] if 'order_delivered_customer_date' in order else None,
                     'order_request_time': order['order_request_time'],
-                    'order_restaurant_carrier_date': order[
-                        'order_restaurant_carrier_date'] if 'order_restaurant_carrier_date' in order else None,
+                    'order_restaurant_carrier_date': order['order_restaurant_carrier_date'] if 'order_restaurant_carrier_date' in order else None,
                     'order_restaurant_carrier_restaurantId': order['order_restaurant_carrier_restaurantId'],
                     'driver_id': order['driver_id'] if 'driver_id' in order else None,
                     'order_status': order['order_status'],
                     'Order_ID': order['Order_ID'],
-                    'order_estimated_delivery_date': order[
-                        'order_estimated_delivery_date'] if 'order_estimated_delivery_date' in order else None,
+                    'order_estimated_delivery_date': order['order_estimated_delivery_date'] if 'order_estimated_delivery_date' in order else None,
                     'Qtable_position': order['Qtable_position'],
                     'Qtable_updated': order['Qtable_updated']
                 }
