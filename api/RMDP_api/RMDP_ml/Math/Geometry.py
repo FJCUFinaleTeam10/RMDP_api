@@ -23,7 +23,6 @@ def interSectionCircleAndLine(center_Latitude: float, center_Longitude: float, R
     circle = Point(center_Latitude, center_Longitude).buffer(Radius).bound
     line = LineString([(a_Longitude, a_Latitude), (b_Latitude, b_Longitude)])
     intersection = circle.intersection(line)
-    pprint(intersection)
     return intersection.x, intersection.y
 
 

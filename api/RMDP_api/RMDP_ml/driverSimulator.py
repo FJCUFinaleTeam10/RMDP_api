@@ -15,7 +15,6 @@ class driverSimulator:
         self.totalCurrentWorker = 2
         self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
         self.DBclient = Mongo_Operate()
-        self.updateTime = 1
 
     def generateThread(self):
         cityList = self.DBclient.getAllCity()
@@ -68,7 +67,6 @@ class driverSimulator:
                             currentOrder['order_restaurant_carrier_date'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
                             currentDriver['Capacity'] -= 1
                         self.DBclient.updateOrder(targetDestination)
-                        #currentDriver['Capacity'] -= 1
 
                         if currentDriver['Route'] is None:
                             currentDriver['Velocity'] = 0
@@ -83,7 +81,8 @@ class driverSimulator:
                                                                                     targetDestination['Longitude'])
                         currentDriver['Latitude'] = updatedLon
                         currentDriver['Longitude'] = updatedLat
-
+                    logging.info(currentDriver['Driver_ID'], "has moved to new location,Lan:",
+                                 currentDriver['Latitude'], " Lon:", currentDriver['Longitude'])
                     self.DBclient.updateDriver(currentDriver)
         except Exception as e:
             logging.critical(e, exc_info=True)
