@@ -15,14 +15,15 @@ class driverSimulator:
         self.totalCurrentWorker = 2
         self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
         self.DBclient = Mongo_Operate()
-
+        self.updateTime = 1
     def generateThread(self):
-        cityList = self.DBclient.getAllCity()
-
+        cityList = self.DBclient.getAllCity()  # get all city
+        totalCurrentWorker = 2
         logging.info("start generating")
-        with ThreadPoolExecutor(max_workers=self.totalCurrentWorker) as executor:
+        with ThreadPoolExecutor(max_workers=totalCurrentWorker) as executor:
+            threads = []
             for i in range(len(cityList)):
-                executor.submit(self.updateDriverLocation, index=i, cityName=(cityList[i]['City']))
+                threads.append(executor.submit(self.updateDriverLocation, cityName=(cityList[i]['City'])))
         logging.info("task completed")
 
     def updateDriverLocation(self, cityName):
@@ -45,7 +46,7 @@ class driverSimulator:
                                                            targetDestination['Longitude'])
 
                     # the distance of each update time
-                    DistanceTraveled = currentDriver['Velocity'] * self.updateTime
+                    DistanceTraveled = (currentDriver['Velocity'] * self.updateTime) / 1000
 
                     # transform distance to degree
                     DegreeTraveled = DistanceTraveled / (111 * 1000)
@@ -74,16 +75,14 @@ class driverSimulator:
 
                         updatedLon, updatedLat = Geometry.interSectionCircleAndLine(currentDriver['Latitude'],
                                                                                     currentDriver['Longitude'],
-                                                                                    DegreeTraveled,
+                                                                                    DistanceTraveled,
                                                                                     currentDriver['Latitude'],
                                                                                     currentDriver['Longitude'],
                                                                                     targetDestination['Latitude'],
                                                                                     targetDestination['Longitude'])
                         currentDriver['Latitude'] = updatedLon
                         currentDriver['Longitude'] = updatedLat
-                    logging.info(currentDriver['Driver_ID'], "has moved to new location,Lan:",
-                                 currentDriver['Latitude'], " Lon:", currentDriver['Longitude'])
-                    self.DBclient.updateDriver(currentDriver)
+                    logging.info("updateded")
         except Exception as e:
             logging.critical(e, exc_info=True)
 

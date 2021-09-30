@@ -19,8 +19,8 @@ def lineSolution(x1: float, x2: float, y1: float, y2: float):
 
 def interSectionCircleAndLine(center_Latitude: float, center_Longitude: float, Radius: float, a_Latitude: float,
                               a_Longitude: float, b_Latitude: float, b_Longitude: float):
-    circle = Point(center_Latitude, center_Longitude).buffer(Radius).bound
-    line = LineString([(a_Longitude, a_Latitude), (b_Latitude, b_Longitude)])
+    circle = Point(center_Latitude, center_Longitude).buffer(Radius).boundary
+    line = LineString([(a_Latitude, a_Longitude), (b_Latitude, b_Longitude)])
     intersection = circle.intersection(line)
     return intersection.x, intersection.y
 
