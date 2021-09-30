@@ -105,9 +105,9 @@ class Mongo_Operate:
                     'Route': driver['Route'],
                     'Latitude': driver['Latitude'],
                     'Longitude': driver['Longitude'],
-                    'State':driver['State'],
-                    'Reward':driver['Reward'],
-                    'order_list':driver['order_list'],
+                    'State': driver['State'],
+                    'Reward': driver['Reward'],
+                    'order_list': driver['order_list'],
                 },
             })
         except PyMongoError as py_mongo_error:
@@ -122,14 +122,17 @@ class Mongo_Operate:
                     'order_approved_at': order['order_approved_at'] if 'order_approved_at' in order else None,
                     'Longitude': order['Longitude'],
                     'Latitude': order['Latitude'],
-                    'order_delivered_customer_date': order['order_delivered_customer_date'] if 'order_delivered_customer_date' in order else None,
+                    'order_delivered_customer_date': order[
+                        'order_delivered_customer_date'] if 'order_delivered_customer_date' in order else None,
                     'order_request_time': order['order_request_time'],
-                    'order_restaurant_carrier_date': order['order_restaurant_carrier_date'] if 'order_restaurant_carrier_date' in order else None,
+                    'order_restaurant_carrier_date': order[
+                        'order_restaurant_carrier_date'] if 'order_restaurant_carrier_date' in order else None,
                     'order_restaurant_carrier_restaurantId': order['order_restaurant_carrier_restaurantId'],
                     'driver_id': order['driver_id'] if 'driver_id' in order else None,
                     'order_status': order['order_status'],
                     'Order_ID': order['Order_ID'],
-                    'order_estimated_delivery_date': order['order_estimated_delivery_date'] if 'order_estimated_delivery_date' in order else None,
+                    'order_estimated_delivery_date': order[
+                        'order_estimated_delivery_date'] if 'order_estimated_delivery_date' in order else None,
                     'Qtable_position': order['Qtable_position'],
                     'Qtable_updated': order['Qtable_updated']
                 }
@@ -164,9 +167,10 @@ class Mongo_Operate:
         except PyMongoError as py_mongo_error:
             logging.critical(py_mongo_error, exc_info=True)
 
-    def getQlearning(self,cityName):
+    def getQlearning(self, cityName):
         return self.qlearningCollection.find_one({"City": cityName})
-    def updateQlearning(self,q_setting):
+
+    def updateQlearning(self, q_setting):
         try:
             self.qlearningCollection.update_one({
                 'City': q_setting['City']
@@ -179,13 +183,13 @@ class Mongo_Operate:
                     'side_length': q_setting['side_length'],
                     'learning_rate': q_setting['learning_rate'],
                     'gamma': q_setting['gamma'],
-                    'epsilon': q_setting['epsilon'] ,
+                    'epsilon': q_setting['epsilon'],
                     'max_epislon': q_setting['max_epislon'],
                     'min_epislon': q_setting['min_epislon'],
-                    'decay_rate':q_setting['decay_rate'],
-                    'nearBY':q_setting['nearBY'],
-                    'capacity':q_setting['capacity'],
-                    'episode':q_setting['episode']
+                    'decay_rate': q_setting['decay_rate'],
+                    'nearBY': q_setting['nearBY'],
+                    'capacity': q_setting['capacity'],
+                    'episode': q_setting['episode']
                 }
             }, upsert=False)
         except Exception as e:

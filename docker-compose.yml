@@ -54,6 +54,7 @@ services:
       - rmdp_api
     depends_on:
       - mongodb
+    restart: 'always'
 
   redis:
     container_name: redis

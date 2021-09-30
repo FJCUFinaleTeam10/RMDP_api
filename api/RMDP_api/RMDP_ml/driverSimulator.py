@@ -18,11 +18,11 @@ class driverSimulator:
 
     def generateThread(self):
         cityList = self.DBclient.getAllCity()
-        logging.info("start generating city")
+
+        logging.info("start generating")
         with ThreadPoolExecutor(max_workers=self.totalCurrentWorker) as executor:
-            threads = []
             for i in range(len(cityList)):
-                threads.append(executor.submit(self.updateDriverLocation, index=i, cityName=(cityList[i]['City'])))
+                executor.submit(self.updateDriverLocation, index=i, cityName=(cityList[i]['City']))
         logging.info("task completed")
 
     def updateDriverLocation(self, cityName):

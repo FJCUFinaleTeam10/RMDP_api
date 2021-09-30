@@ -1,7 +1,6 @@
 import logging
 import math
 import random
-from pprint import pprint
 
 from numpy import ones, vstack
 from numpy.linalg import lstsq
@@ -43,3 +42,4 @@ def coorDistance(lat1, lon1, lat2, lon2):
 
     except Exception as e:
         logging.critical(e, exc_info=True)
+
