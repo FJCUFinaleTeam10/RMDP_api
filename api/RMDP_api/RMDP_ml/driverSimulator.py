@@ -16,6 +16,7 @@ class driverSimulator:
         self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
         self.DBclient = Mongo_Operate()
         self.updateTime = 1
+
     def generateThread(self):
         cityList = self.DBclient.getAllCity()  # get all city
         totalCurrentWorker = 2
@@ -44,13 +45,10 @@ class driverSimulator:
                                                            currentDriver['Longitude'],
                                                            targetDestination['Latitude'],
                                                            targetDestination['Longitude'])
-
                     # the distance of each update time
                     DistanceTraveled = (currentDriver['Velocity'] * self.updateTime) / 1000
-
                     # transform distance to degree
                     DegreeTraveled = DistanceTraveled / (111 * 1000)
-
                     # the driver update distance longer than next destination
                     if DistanceTraveled >= DistanceRemain:
 
@@ -75,12 +73,11 @@ class driverSimulator:
 
                         updatedLon, updatedLat = Geometry.interSectionCircleAndLine(currentDriver['Latitude'],
                                                                                     currentDriver['Longitude'],
-                                                                                    DistanceTraveled/1000,
+                                                                                    DistanceTraveled / 1000,
                                                                                     currentDriver['Latitude'],
                                                                                     currentDriver['Longitude'],
                                                                                     targetDestination['Latitude'],
-                                                                                    targetDestination['Longitude'],
-                                                                                     DistanceRemain)
+                                                                                    targetDestination['Longitude'])
                         currentDriver['Latitude'] = updatedLon
                         currentDriver['Longitude'] = updatedLat
                     logging.info("updateded")

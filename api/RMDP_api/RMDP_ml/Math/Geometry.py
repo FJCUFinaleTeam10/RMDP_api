@@ -6,7 +6,6 @@ from numpy import ones, vstack
 from numpy.linalg import lstsq
 from shapely.geometry import LineString
 from shapely.geometry import Point
-from pyproj import Geod
 
 
 def lineSolution(x1: float, x2: float, y1: float, y2: float):
@@ -19,7 +18,7 @@ def lineSolution(x1: float, x2: float, y1: float, y2: float):
 
 
 def interSectionCircleAndLine(center_Latitude: float, center_Longitude: float, Radius: float, a_Latitude: float,
-                              a_Longitude: float, b_Latitude: float, b_Longitude: float, remain: float):
+                              a_Longitude: float, b_Latitude: float, b_Longitude: float):
     circle = Point(center_Latitude, center_Longitude).buffer(Radius).boundary
     line = LineString([(a_Latitude, a_Longitude), (b_Latitude, b_Longitude)])
     intersection = circle.intersection(line)
@@ -44,8 +43,3 @@ def coorDistance(lat1, lon1, lat2, lon2):
     except Exception as e:
         logging.critical(e, exc_info=True)
 
-
-line_string = LineString([Point(1, 2), Point(3, 4)])
-geod = Geod(ellps="WGS84")
-f"{geod.geometry_length(line_string):.3f}"
-'313588.397'
