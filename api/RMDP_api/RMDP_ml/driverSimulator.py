@@ -75,11 +75,12 @@ class driverSimulator:
 
                         updatedLon, updatedLat = Geometry.interSectionCircleAndLine(currentDriver['Latitude'],
                                                                                     currentDriver['Longitude'],
-                                                                                    DistanceTraveled,
+                                                                                    DistanceTraveled/1000,
                                                                                     currentDriver['Latitude'],
                                                                                     currentDriver['Longitude'],
                                                                                     targetDestination['Latitude'],
-                                                                                    targetDestination['Longitude'])
+                                                                                    targetDestination['Longitude'],
+                                                                                     DistanceRemain)
                         currentDriver['Latitude'] = updatedLon
                         currentDriver['Longitude'] = updatedLat
                     logging.info("updateded")
