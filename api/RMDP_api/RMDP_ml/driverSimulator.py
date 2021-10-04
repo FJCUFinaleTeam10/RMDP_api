@@ -81,6 +81,7 @@ class driverSimulator:
                         currentDriver['Latitude'] = updatedLon
                         currentDriver['Longitude'] = updatedLat
                     logging.info("updateded")
+                    self.DBclient.updateDriver(currentDriver)
         except Exception as e:
             logging.critical(e, exc_info=True)
 
