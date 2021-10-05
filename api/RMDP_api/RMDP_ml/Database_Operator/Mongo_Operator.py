@@ -107,7 +107,6 @@ class Mongo_Operate:
                     'Longitude': driver['Longitude'],
                     'State': driver['State'],
                     'Reward': driver['Reward'],
-                    'order_list': driver['order_list'],
                 },
             })
         except PyMongoError as py_mongo_error:

@@ -19,7 +19,7 @@ class driverSimulator:
 
     def generateThread(self):
         cityList = self.DBclient.getAllCity()  # get all city
-        totalCurrentWorker = 2
+        totalCurrentWorker = 81
         logging.info("start generating")
         with ThreadPoolExecutor(max_workers=totalCurrentWorker) as executor:
             threads = []
@@ -80,7 +80,7 @@ class driverSimulator:
                                                                                     targetDestination['Longitude'])
                         currentDriver['Latitude'] = updatedLon
                         currentDriver['Longitude'] = updatedLat
-                    logging.info("updateded")
+                    #logging.info("updateded")
                     self.DBclient.updateDriver(currentDriver)
         except Exception as e:
             logging.critical(e, exc_info=True)

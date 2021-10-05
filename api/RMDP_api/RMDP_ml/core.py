@@ -68,6 +68,7 @@ class RMDP:
                 skipPostponement = True
                 unAssignOrder = copy.deepcopy(postponedOrder)
                 postponedOrder.clear()
+
             if maxLengthPost <= len(unAssignOrder):
                 maxLengthPost = len(unAssignOrder) + 1
 
@@ -110,13 +111,13 @@ class RMDP:
                                                                       restaurant['Restaurant_ID'] == P_hat[0][
                                                                           "order_restaurant_carrier_restaurantId"]
                                                                       ))
-                                PairdDriverId = self.Qing(D, currentPairdRestaurent, currentDriverList, cityName,
+                                PairdDriverId = self.Qing(D, PairedRestaurent, currentDriverList, cityName,
                                                           q_setting)
                                 P_hat[0]['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
                                 currentDriverList[PairdDriverId]['Capacity'] += 1
                                 currentDriverList[PairdDriverId]['Route'] = copy.deepcopy(
                                     self.AssignOrder(P_hat[0], currentDriverList[PairdDriverId], PairedRestaurent))
-                                pairdOrder.append(P_hat[0])  # add finish order
+                                currentPairdOrder.append(P_hat[0])  # add finish order
                                 P_hat.pop(0)
                                 if len(P_hat) == 0:
                                     break
@@ -126,14 +127,14 @@ class RMDP:
                                         restaurant for restaurant in restaurantList if
                                         int(restaurant['Restaurant_ID']) == int(
                                             order["order_restaurant_carrier_restaurantId"])))
-                                    PairdDriverId = self.Qing(D, currentPairdRestaurent, currentDriverList, cityName,
+                                    PairdDriverId = self.Qing(D,PairedRestaurent, currentDriverList, cityName,
                                                               q_setting)
                                     currentDriverList[PairdDriverId]['Capacity'] += 1
                                     order['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
                                     currentDriverList[PairdDriverId]['Route'] = copy.deepcopy(
                                         self.AssignOrder(order, currentDriverList[PairdDriverId],
                                                          PairedRestaurent))
-                                    pairdOrder.append(order)
+                                    currentPairdOrder.append(order)
                                 P_hat.clear()
                             P_hat.append(D)
 
@@ -175,7 +176,7 @@ class RMDP:
                     lambda x: (int(x['nodeType']) == 0 and x['Order_ID'] != order['Order_ID']) or (  # why no string
                             int(x['nodeType']) == 1 and str(x['Order_ID']) != str(order['Order_ID'])),
                     driverList[index]['Route'])))
-                driverList[index]['Capacity'] -= 1
+                #driverList[index]['Capacity'] -= 1
             self.updateDriver(driverList)
             self.updatePosponedOrder(postponedOrder)
             self.updatePairdOrder(pairdOrder)
