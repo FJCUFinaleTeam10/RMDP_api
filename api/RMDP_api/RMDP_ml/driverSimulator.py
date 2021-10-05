@@ -31,11 +31,6 @@ class driverSimulator:
         try:
             driverList = self.DBclient.getHasOrderDriverBaseOnCity(cityName)
 
-            restaurantIdList = list(
-                map(lambda x: int(x['Restaurant_ID']), self.DBclient.getRestaurantIDBaseOnCity(cityName)))
-
-            orderList = self.DBclient.getPairedOrderBaseOnCity(restaurantIdList)
-
             if len(driverList) > 0:
                 for currentDriver in driverList:
                     targetDestination = currentDriver['Route'][0]
@@ -55,8 +50,7 @@ class driverSimulator:
                         currentDriver['Latitude'] = targetDestination['Latitude']
                         currentDriver['Longitude'] = targetDestination['Longitude']
                         travelLocation = currentDriver['Route'].pop(0)
-                        currentOrder = next(
-                            order for order in orderList if order['Order_ID'] == travelLocation['Order_ID'])
+                        currentOrder = next(iter(self.DBclient.getPairedOrderBaseOnOrderID(travelLocation['Order_ID'])))
 
                         if travelLocation['nodeType'] == 0:
                             currentOrder['order_status'] = 'delivered'
