@@ -43,11 +43,11 @@ class Mongo_Operate:
             ]
         }))
 
-    def getPairedOrderBaseOnCity(self, restaurantList):
+    def getPairedOrderBaseOnCity(self, restaurantListID):
         return list(self.orderCollection.find({
             '$and': [
                 {"order_restaurant_carrier_restaurantId": {
-                    "$in": restaurantList,
+                    "$in": restaurantListID,
                 }
                 },
                 {"order_status": {
@@ -55,6 +55,12 @@ class Mongo_Operate:
                 }
                 }
             ]
+        }))
+
+    def getPairedOrderBaseOnOrderID(self, orderID):
+        return list(self.orderCollection.find({
+                "Order_ID": str(orderID)
+
         }))
 
     def getRestaurantIDBaseOnCity(self, cityName):

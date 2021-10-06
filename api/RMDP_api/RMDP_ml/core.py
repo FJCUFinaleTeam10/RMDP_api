@@ -127,7 +127,7 @@ class RMDP:
                                         restaurant for restaurant in restaurantList if
                                         int(restaurant['Restaurant_ID']) == int(
                                             order["order_restaurant_carrier_restaurantId"])))
-                                    PairdDriverId = self.Qing(D,PairedRestaurent, currentDriverList, cityName,
+                                    PairdDriverId = self.Qing(D, PairedRestaurent, currentDriverList, cityName,
                                                               q_setting)
                                     currentDriverList[PairdDriverId]['Capacity'] += 1
                                     order['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
@@ -176,7 +176,7 @@ class RMDP:
                     lambda x: (int(x['nodeType']) == 0 and x['Order_ID'] != order['Order_ID']) or (  # why no string
                             int(x['nodeType']) == 1 and str(x['Order_ID']) != str(order['Order_ID'])),
                     driverList[index]['Route'])))
-                #driverList[index]['Capacity'] -= 1
+                # driverList[index]['Capacity'] -= 1
             self.updateDriver(driverList)
             self.updatePosponedOrder(postponedOrder)
             self.updatePairdOrder(pairdOrder)
@@ -451,14 +451,9 @@ class RMDP:
         # decide action
         exp_exp_tradeoff = random.uniform(0, 1)
 
-        if exp_exp_tradeoff > q_setting['epsilon']:
-            # action = np.argmax(q_setting['q_table'][state, :])#Change
-            if q_setting['q_table'][state][0] > q_setting['q_table'][state][1]:
-                return 0
-            elif q_setting['q_table'][state][0] < q_setting['q_table'][state][1]:
-                return 1
-            else:
-                return random.randint(0, 1)
+        # action = np.argmax(q_setting['q_table'][state, :])#Change
+        if exp_exp_tradeoff > q_setting['epsilon'] and q_setting['q_table'][state][0] != q_setting['q_table'][state][1]:
+            return 0 if q_setting['q_table'][state][0] > q_setting['q_table'][state][1] else 1
         else:
             return random.randint(0, 1)
 
@@ -469,7 +464,3 @@ class RMDP:
             int(abs(float(city['Longitude']) - float(city['radius']) - float(agent['Longitude'])) / (
                     float(city['radius']) * 2 / 50))]
         return state[0] * 50 + state[1]
-
-
-TEST = RMDP()
-TEST.generateThread()
