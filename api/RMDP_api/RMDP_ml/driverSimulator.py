@@ -30,10 +30,10 @@ class driverSimulator:
     def updateDriverLocation(self, cityName):
         try:
             driverList = self.DBclient.getHasOrderDriverBaseOnCity(cityName)
-            for currentDriver in (driver for driver in driverList if len(driver['Route']) > 0):
+            #driverA = list(driver for driver in driverList if len(driver['Route']) > 0)
+            for currentDriver in list(driver for driver in driverList if len(driver['Route']) > 0):#get driver route > 0 in list
                 targetDestination = currentDriver['Route'][0]
                 # distance between target distance and current driver
-
                 DistanceRemain = Geometry.coorDistance(currentDriver['Latitude'],
                                                        currentDriver['Longitude'],
                                                        targetDestination['Latitude'],
@@ -47,14 +47,15 @@ class driverSimulator:
                     currentDriver['Longitude'] = targetDestination['Longitude']
                     travelLocation = currentDriver['Route'].pop(0)
                     currentOrder = next(iter(self.DBclient.getPairedOrderBaseOnOrderID(travelLocation['Order_ID'])))
-                    if travelLocation['nodeType'] == 0:
+                    if travelLocation['nodeType'] == 1:
                         currentOrder['order_status'] = 'delivered'
                         currentDriver['Capacity'] -= 1
                         currentOrder['order_delivered_customer_date'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
                     else:
                         currentOrder['order_status'] = 'headToCus'
                         currentOrder['order_restaurant_carrier_date'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-                    self.DBclient.updateOrder(targetDestination)
+                    #self.DBclient.updateOrder(targetDestination)
+                    self.DBclient.updateOrder(currentOrder)
                     if currentDriver['Route'] is None:
                         currentDriver['Velocity'] = 0
                 else:
