@@ -1,0 +1,4 @@
+Dockerfile
+.dockerignore
+mongo-seed-data
+mongodb-scripts
