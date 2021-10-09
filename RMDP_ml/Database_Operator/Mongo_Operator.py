@@ -2,7 +2,7 @@ import logging
 import os
 import uuid
 from datetime import datetime
-
+import json
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
@@ -108,7 +108,7 @@ class Mongo_Operate:
                 "$set": {
                     'Capacity': driver['Capacity'],
                     'Velocity': driver['Velocity'],
-                    'Route': driver['Route'],
+                    'Route': [json.dump(index) for index in driver['Route']],
                     'Latitude': driver['Latitude'],
                     'Longitude': driver['Longitude'],
                     'State': driver['State'],

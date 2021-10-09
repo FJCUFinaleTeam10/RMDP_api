@@ -7,11 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from Database_Operator.Mongo_Operator import Mongo_Operate
 from Math import Geometry
-
-
 # from Math import Geometry
-
-
 class userSimulator:
 
     def __init__(self):
@@ -47,10 +43,7 @@ class userSimulator:
                 'order_status': 'unassigned',
                 'Order_ID': str(uuid.uuid4()),
                 'Qtable_position': 0,
-                'Qtable_updated':0
+                'Qtable_updated': 0
             })
         except Exception as e:
             logging.critical(e, exc_info=True)
-
-
-

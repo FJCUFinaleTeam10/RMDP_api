@@ -1,14 +1,14 @@
 import copy
-import os
-from datetime import datetime, timedelta
 import itertools
-import math
 import logging
+import math
+import os
+import random
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
+
 from Database_Operator.Mongo_Operator import Mongo_Operate
 from Math import Geometry
-import numpy as np
-import random
 
 
 class RMDP:
@@ -413,7 +413,7 @@ class RMDP:
                 q_setting['episode'] += 1
                 # reduce episode
                 q_setting['epsilon'] = q_setting['min_epislon'] + (
-                        q_setting['max_epislon'] - q_setting['min_epislon']) * np.exp(
+                        q_setting['max_epislon'] - q_setting['min_epislon']) * math.exp(
                     -q_setting['decay_rate'] * q_setting['episode'])
                 self.DBclient.updateQlearning(q_setting)
                 return return_index
