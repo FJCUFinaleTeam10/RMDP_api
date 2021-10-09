@@ -178,9 +178,10 @@ class Mongo_Operate:
     def updateQlearning(self, q_setting):
         try:
             self.qlearningCollection.update_one({
-                'City': q_setting['City']
+                '_id': q_setting['_id']
             }, {
                 '$set': {
+                    'City':q_setting['City'],
                     'state_index': q_setting['state_index'],
                     'action_index': q_setting['action_index'],
                     'q_table': q_setting['q_table'],
