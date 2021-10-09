@@ -107,3 +107,4 @@ enviroment.env
 .ide
 __pycache__
 data-db
+.env

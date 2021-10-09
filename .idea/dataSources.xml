@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="RMDP@140.136.151.94" uuid="ceb9857a-e872-4e79-b3fe-fe753a2434e4">
-      <driver-ref>mongo</driver-ref>
-      <synchronize>true</synchronize>
-      <jdbc-driver>com.dbschema.MongoJdbcDriver</jdbc-driver>
-      <jdbc-url>mongodb://140.136.151.94:27017/RMDP</jdbc-url>
-      <working-dir>$ProjectFileDir$</working-dir>
-    </data-source>
     <data-source source="LOCAL" name="RMDP@localhost" uuid="95d4cfbc-b9fd-4844-b5ed-9d8217ef35c8">
       <driver-ref>mongo</driver-ref>
       <synchronize>true</synchronize>
