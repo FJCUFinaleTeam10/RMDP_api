@@ -44,11 +44,11 @@ class Mongo_Operate:
             ]
         }))
 
-    def getPairedOrderBaseOnCity(self, restaurantList):
+    def getPairedOrderBaseOnCity(self, restaurantListID):
         return list(self.orderCollection.find({
             '$and': [
                 {"order_restaurant_carrier_restaurantId": {
-                    "$in": restaurantList,
+                    "$in": restaurantListID,
                 }
                 },
                 {"order_status": {
@@ -56,6 +56,12 @@ class Mongo_Operate:
                 }
                 }
             ]
+        }))
+
+    def getPairedOrderBaseOnOrderID(self, orderID):
+        return list(self.orderCollection.find({
+                "Order_ID": str(orderID)
+
         }))
 
     def getRestaurantIDBaseOnCity(self, cityName):
@@ -108,7 +114,6 @@ class Mongo_Operate:
                     'Longitude': driver['Longitude'],
                     'State': driver['State'],
                     'Reward': driver['Reward'],
-                    'order_list': driver['order_list'],
                 },
             })
         except PyMongoError as py_mongo_error:
@@ -174,9 +179,10 @@ class Mongo_Operate:
     def updateQlearning(self, q_setting):
         try:
             self.qlearningCollection.update_one({
-                'City': q_setting['City']
+                '_id': q_setting['_id']
             }, {
                 '$set': {
+                    'City':q_setting['City'],
                     'state_index': q_setting['state_index'],
                     'action_index': q_setting['action_index'],
                     'q_table': q_setting['q_table'],

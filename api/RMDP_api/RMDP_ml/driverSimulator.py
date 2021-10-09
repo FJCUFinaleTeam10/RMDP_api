@@ -16,9 +16,10 @@ class driverSimulator:
         self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
         self.DBclient = Mongo_Operate()
         self.updateTime = 1
+
     def generateThread(self):
         cityList = self.DBclient.getAllCity()  # get all city
-        totalCurrentWorker = 2
+        totalCurrentWorker = 81
         logging.info("start generating")
         with ThreadPoolExecutor(max_workers=totalCurrentWorker) as executor:
             threads = []
@@ -29,60 +30,52 @@ class driverSimulator:
     def updateDriverLocation(self, cityName):
         try:
             driverList = self.DBclient.getHasOrderDriverBaseOnCity(cityName)
-
-            restaurantIdList = list(
-                map(lambda x: int(x['Restaurant_ID']), self.DBclient.getRestaurantIDBaseOnCity(cityName)))
-
-            orderList = self.DBclient.getPairedOrderBaseOnCity(restaurantIdList)
-
-            if len(driverList) > 0:
-                for currentDriver in driverList:
-                    targetDestination = currentDriver['Route'][0]
-
-                    # distance between target distance and current driver
-                    DistanceRemain = Geometry.coorDistance(currentDriver['Latitude'],
-                                                           currentDriver['Longitude'],
-                                                           targetDestination['Latitude'],
-                                                           targetDestination['Longitude'])
-
-                    # the distance of each update time
-                    DistanceTraveled = (currentDriver['Velocity'] * self.updateTime) / 1000
-
-                    # transform distance to degree
-                    DegreeTraveled = DistanceTraveled / (111 * 1000)
-
-                    # the driver update distance longer than next destination
-                    if DistanceTraveled >= DistanceRemain:
-
-                        currentDriver['Latitude'] = targetDestination['Latitude']
-                        currentDriver['Longitude'] = targetDestination['Longitude']
-                        travelLocation = currentDriver['Route'].pop(0)
-                        currentOrder = next(
-                            order for order in orderList if order['Order_ID'] == travelLocation['Order_ID'])
-
-                        if travelLocation['nodeType'] == 0:
-                            currentOrder['order_status'] = 'delivered'
-                            currentOrder['order_delivered_customer_date'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-                        else:
-                            currentOrder['order_status'] = 'headToCus'
-                            currentOrder['order_restaurant_carrier_date'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-                            currentDriver['Capacity'] -= 1
-                        self.DBclient.updateOrder(targetDestination)
-
-                        if currentDriver['Route'] is None:
-                            currentDriver['Velocity'] = 0
+            #driverA = list(driver for driver in driverList if len(driver['Route']) > 0)
+            for currentDriver in list(driver for driver in driverList if len(driver['Route']) > 0):#get driver route > 0 in list
+                targetDestination = currentDriver['Route'][0]
+                # distance between target distance and current driver
+                DistanceRemain = Geometry.coorDistance(currentDriver['Latitude'],
+                                                       currentDriver['Longitude'],
+                                                       targetDestination['Latitude'],
+                                                       targetDestination['Longitude'])
+                # the distance of each update time
+                DistanceTraveled = (currentDriver['Velocity'] * self.updateTime) / 1000
+                # transform distance to degree
+                # the driver update distance longer than next destination
+                if DistanceTraveled >= DistanceRemain:
+                    currentDriver['Latitude'] = targetDestination['Latitude']
+                    currentDriver['Longitude'] = targetDestination['Longitude']
+                    travelLocation = currentDriver['Route'].pop(0)
+                    currentOrder = next(iter(self.DBclient.getPairedOrderBaseOnOrderID(travelLocation['Order_ID'])))
+                    if travelLocation['nodeType'] == 1:
+                        currentOrder['order_status'] = 'delivered'
+                        currentDriver['Capacity'] -= 1
+                        currentOrder['order_delivered_customer_date'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
                     else:
+                        currentOrder['order_status'] = 'headToCus'
+                        currentOrder['order_restaurant_carrier_date'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                    #self.DBclient.updateOrder(targetDestination)
+                    self.DBclient.updateOrder(currentOrder)
+                    if currentDriver['Route'] is None:
+                        currentDriver['Velocity'] = 0
+                else:
+                    updatedLat, updatedLon = Geometry.interSectionCircleAndLine(currentDriver['Latitude'],
+                                                                                currentDriver['Longitude'],
+                                                                                DistanceTraveled / 1000,
+                                                                                currentDriver['Latitude'],
+                                                                                currentDriver['Longitude'],
+                                                                                targetDestination['Latitude'],
+                                                                                targetDestination['Longitude'])
 
-                        updatedLon, updatedLat = Geometry.interSectionCircleAndLine(currentDriver['Latitude'],
-                                                                                    currentDriver['Longitude'],
-                                                                                    DistanceTraveled,
-                                                                                    currentDriver['Latitude'],
-                                                                                    currentDriver['Longitude'],
-                                                                                    targetDestination['Latitude'],
-                                                                                    targetDestination['Longitude'])
-                        currentDriver['Latitude'] = updatedLon
-                        currentDriver['Longitude'] = updatedLat
-                    logging.info("updateded")
+                    currentDriver['Latitude'] = updatedLat
+                    currentDriver['Longitude'] = updatedLon
+                    # logging.info("updateded")
+                aftterDIstance = Geometry.coorDistance(currentDriver['Latitude'],
+                                                       currentDriver['Longitude'],
+                                                       targetDestination['Latitude'],
+                                                       targetDestination['Longitude'])
+                print(DistanceRemain," ",aftterDIstance)
+                self.DBclient.updateDriver(currentDriver)
         except Exception as e:
             logging.critical(e, exc_info=True)
 
