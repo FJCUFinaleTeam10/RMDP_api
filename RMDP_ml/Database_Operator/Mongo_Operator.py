@@ -3,6 +3,8 @@ import os
 import uuid
 from datetime import datetime
 import json
+
+from bson import json_util
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
@@ -59,7 +61,7 @@ class Mongo_Operate:
 
     def getPairedOrderBaseOnOrderID(self, orderID):
         return list(self.orderCollection.find({
-                "Order_ID": str(orderID)
+            "Order_ID": str(orderID)
 
         }))
 
@@ -108,7 +110,7 @@ class Mongo_Operate:
                 "$set": {
                     'Capacity': driver['Capacity'],
                     'Velocity': driver['Velocity'],
-                    'Route': [json.dumps(index) for index in driver['Route']],
+                    'Route': [json.loads(json_util.dumps(index)) for index in driver['Route']],
                     'Latitude': driver['Latitude'],
                     'Longitude': driver['Longitude'],
                     'State': driver['State'],
