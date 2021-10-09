@@ -108,7 +108,7 @@ class Mongo_Operate:
                 "$set": {
                     'Capacity': driver['Capacity'],
                     'Velocity': driver['Velocity'],
-                    'Route': [json.dump(index) for index in driver['Route']],
+                    'Route': [json.dumps(index) for index in driver['Route']],
                     'Latitude': driver['Latitude'],
                     'Longitude': driver['Longitude'],
                     'State': driver['State'],
