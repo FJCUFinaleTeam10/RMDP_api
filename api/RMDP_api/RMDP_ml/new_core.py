@@ -108,7 +108,7 @@ class SA:
                     #end  = time.time()
                     #print(end - start)
                     res = delay_new - delay_old
-                    if res < 0 or np.exp(-res / (k * t)) > np.random.rand():
+                    if res < 0 or math.exp(-res / (k * t)) >random.uniform(0,1):
                         old_sequence = copy.deepcopy(new_sequence)
                         delay_old = delay_new
                         dr_list= copy.deepcopy(driverList_new)
