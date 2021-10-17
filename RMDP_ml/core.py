@@ -201,7 +201,7 @@ class RMDP:
                     # print(timeComplete)
                     # print(currentNode['order_request_time'])
                     timeDeadline = currentNode['order_request_time'] + self.deadlineTime
-                    # print(timeDeadline)
+                    print(timeDeadline)
                     timeDelay = timeComplete - timeDeadline
                     delay += timeDelay.total_seconds()
             return max(0, delay)
