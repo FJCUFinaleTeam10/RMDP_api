@@ -1,11 +1,10 @@
-# pull official base image
-FROM python:3.9.5-alpine
+FROM python:3.7-slim
 ENV PYTHONUNBUFFERED=1
 # set work directory
 WORKDIR /usr/src/app
 # set environment variables
 # install dependencies
-RUN apk --no-cache add gcc libc-dev geos-dev musl-dev linux-headers g++
+RUN apt-get update && apt-get install -y git
 RUN pip install -U pip
 
 COPY requirements.txt ./

@@ -9,8 +9,9 @@ from RMDP_ml.driverSimulator import driverSimulator
 
 @shared_task
 def run_RMDP():
-    currentTask = RMDP()
-    currentTask.generateThread()
+    pass
+    # currentTask = RMDP()
+    # currentTask.generateThread()
 
 
 @shared_task
