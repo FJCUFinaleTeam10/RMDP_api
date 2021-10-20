@@ -47,9 +47,9 @@ def sequencePermutation(city):
         restaurantList = Mongo_Operator.getRestaurantListBaseOnCity(city[0])
         driverList = Mongo_Operator.getDriverBaseOnCity(city[0])
         filterrestTaurantCode = restaurantList[:, 0].tolist()
-        unAssignOrder = Mongo_Operator.getOrderBaseOnCity(filterrestTaurantCode, "unassigned")  # get unassigned order
-        postponedOrder = Mongo_Operator.getOrderBaseOnCity(filterrestTaurantCode, "waiting")  # get postpone order
-        finishedOrder = Mongo_Operator.getOrderBaseOnCity(filterrestTaurantCode, "delivered")
+        unAssignOrder = Mongo_Operator.getOrderBaseOnCity(filterrestTaurantCode, 0)  # get unassigned order
+        postponedOrder = Mongo_Operator.getOrderBaseOnCity(filterrestTaurantCode, 1)  # get postpone order
+        finishedOrder = Mongo_Operator.getOrderBaseOnCity(filterrestTaurantCode, 4)
         nonUpdateOrder = finishedOrder[finishedOrder['Qtable_updated'] == 0]
         q_setting = Mongo_Operator.getQlearning(city['City'])
         updateRealReward(nonUpdateOrder, restaurantList, q_setting)
@@ -314,7 +314,7 @@ def updatePosponedOrder(pospondList):
 def updatePairdOrder(self, pairedOrderList):
     for order in pairedOrderList:
         order['order_status'] = 'headToRes'
-        order['order_approved_at'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        order['order_approved_at'] = datetime.now()
         order['order_estimated_delivery_date'] = (datetime.now() + self.deadlineTime).strftime("%d-%m-%Y %H:%M:%S")
         self.DBclient.updateOrder(order)
 
@@ -412,3 +412,5 @@ def computeState(agent, city):
                      float(city['radius']) * 2 / 50))]
     return state[0] * 50 + state[1]
 
+
+generateThread()

@@ -8,12 +8,9 @@ import numba as nb
 import numpy as np
 import pyarrow
 
-from Math import Geometry
 from RMDP_ml.Database_Operator import Mongo_Operator
+from RMDP_ml.Math import Geometry
 
-spec = OrderedDict()
-spec['DEBUG'] = nb.boolean
-spec['p'] = nb.float64
 p = math.pi / 180
 
 
@@ -55,5 +52,5 @@ def generateOrder(currentCity):
 #   headToRes: 2
 #   head ToCus: 3
 #   deliverd: 4
-
+generateThread()
 

@@ -1,10 +1,7 @@
 import json
 import logging
 import os
-import random
-from datetime import datetime
 
-import numba
 import numpy as np
 import pyarrow
 from bson import json_util
@@ -34,20 +31,20 @@ country_codeCollection = databaseName["country_code"]
 orderCollection = databaseName["order"]
 qlearningCollection = databaseName["Q_learning"]
 
-driverSchema = ['_id', 'Capacity', 'City', 'Country_Code', 'Latitude', 'Longitude', 'Velocity',
+driverPandasSchema = ['_id', 'Capacity', 'City', 'Country_Code', 'Latitude', 'Longitude', 'Velocity',
                 'Driver_ID', 'Reward', 'Route', 'State']
 
 orderSchema = Schema({'driver_id': pyarrow.int64(),
-                      'order_approved_at': datetime,
+                      'order_approved_at': pyarrow.timestamp('ms'),
                       'Latitude': pyarrow.float64(),
                       'Longitude': pyarrow.float64(),
                       'Order_ID': pyarrow.int64(),
                       'Qtable_position': pyarrow.int64(),
-                      'order_delivered_customer_date': datetime,
+                      'order_delivered_customer_date': pyarrow.timestamp('ms'),
                       'Qtable_updated': pyarrow.int64(),
-                      'order_estimated_delivery_date': datetime,
-                      'order_request_time': datetime,
-                      'order_restaurant_carrier_date': datetime,
+                      'order_estimated_delivery_date':  pyarrow.timestamp('ms'),
+                      'order_request_time': pyarrow.timestamp('ms'),
+                      'order_restaurant_carrier_date':  pyarrow.timestamp('ms'),
                       'order_restaurant_carrier_restaurantId': pyarrow.int64(),
                       'order_status': pyarrow.int64(),
                       })
@@ -61,7 +58,8 @@ citySchema = Schema(
     })
 restaurantSchema = Schema({'Restaurant_ID': pyarrow.int64(),
                            'Longitude': pyarrow.float64(),
-                           'Latitude': pyarrow.float64()
+                           'Latitude': pyarrow.float64(),
+                           'order_num': pyarrow.int64()
                            })
 
 qlearningSchema = ['_id', 'City', 'action_index', 'capacity', 'center', 'decay_rate', 'episode',
@@ -135,18 +133,17 @@ def getRestaurantListBaseOnCity(cityId):
 
 
 def getOrderBaseOnCity(filterrestTaurantCode, orderStatus):
-    rawData = restaurantCollection.find_numpy_all({"$and": [{"order_status": orderStatus},
-                                                            {"order_restaurant_carrier_restaurantId": {
-                                                                "$in": filterrestTaurantCode
-                                                            }
-                                                            }
-                                                            ]
-                                                   }, schema=orderSchema)
-    return np.vstack((rawData['driver_id'], rawData['order_approved_at'], rawData['Latitude'], rawData['Longitude'],
-                      rawData['Order_ID'], rawData['Qtable_position'], rawData['order_delivered_customer_date'],
-                      rawData['Qtable_updated'], rawData['order_estimated_delivery_date'], rawData['order_request_time'],
-                      rawData['order_restaurant_carrier_date'], rawData['order_restaurant_carrier_restaurantId'],
-                      rawData['order_status'])).T
+
+    rawData = restaurantCollection.aggregate_numpy_all([{'$match': {"order_status": int(orderStatus),
+                                                                    "order_restaurant_carrier_restaurantId": {
+                                                                        "$in": filterrestTaurantCode}
+                                                                    }}], schema=orderSchema)
+    # return np.vstack((rawData['driver_id'], rawData['order_approved_at'], rawData['Latitude'], rawData['Longitude'],
+    #                   rawData['Order_ID'], rawData['Qtable_position'], rawData['order_delivered_customer_date'],
+    #                   rawData['Qtable_updated'], rawData['order_estimated_delivery_date'], rawData['order_request_time'],
+    #                   rawData['order_restaurant_carrier_date'], rawData['order_restaurant_carrier_restaurantId'],
+    #                   rawData['order_status'])).T
+    return rawData
 
 
 def updateDriver(self, driver):
@@ -256,6 +253,6 @@ def updateQlearning(self, q_setting):
 
 
 def getRestaurantOrderCount(restaurantId):
-    rawData = restaurantCollection.find_numpy_all({'City_id': int(restaurantId)}, schema=orderSchema)
-    return int(random.randint(0, 10000))
+    rawData = restaurantCollection.find_numpy_all({'Restaurant_ID': int(restaurantId)}, schema=restaurantSchema)
+    return rawData['order_num'][0]
     # return rawData['Restaurant_ID']

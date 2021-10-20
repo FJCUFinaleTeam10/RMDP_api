@@ -15,6 +15,7 @@ services:
       CELERY_BACKEND: 'redis://redis:6379/0'
     depends_on:
       - redis
+      - mongodb
     networks:
       - rmdp_api
   mongodb:
@@ -86,6 +87,7 @@ services:
       DEBUG: 1
     depends_on:
       - redis
+      - mongodb
     networks:
       - rmdp_api
   flower:

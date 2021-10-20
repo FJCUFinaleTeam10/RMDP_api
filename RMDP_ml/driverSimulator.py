@@ -1,11 +1,10 @@
 import logging
 import os
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 import numpy as np
 
-from Math import Geometry
+from RMDP_ml.Math import Geometry
 from RMDP_ml.Database_Operator import Mongo_Operator
 
 totalCurrentWorker = 2
@@ -75,6 +74,3 @@ def updateDriverLocation(city):
             Mongo_Operator.updateDriver(currentDriver)
     except Exception as e:
         logging.critical(e, exc_info=True)
-
-
-generateThread()
