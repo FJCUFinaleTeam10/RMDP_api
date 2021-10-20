@@ -36,7 +36,7 @@ def generateOrder(currentCity):
             'Longitude': generatedLocation[1],
             'Latitude': generatedLocation[0],
             'order_request_time': datetime.now(),
-            'order_restaurant_carrier_restaurantId': int(targetRestaurantId),
+            'order_restaurant_carrier_restaurantId': float(targetRestaurantId),
             'order_status': 0,
             'Order_ID': int(currentOrderCount)+1,
             'Qtable_position': 0,
@@ -52,5 +52,5 @@ def generateOrder(currentCity):
 #   headToRes: 2
 #   head ToCus: 3
 #   deliverd: 4
-generateThread()
+#generateThread()
 

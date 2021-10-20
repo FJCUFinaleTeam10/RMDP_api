@@ -76,6 +76,7 @@ def getAllCity():
 
 def getDriverBaseOnCity(cityId):
     rawData = driverCollection.find_numpy_all({'City_id': int(cityId)}, schema=citySchema)
+    print(rawData)
     return np.vstack((rawData['Country_Code'],
                       rawData['Latitude'],
                       rawData['Longitude'],
@@ -134,7 +135,7 @@ def getRestaurantListBaseOnCity(cityId):
 
 def getOrderBaseOnCity(filterrestTaurantCode, orderStatus):
 
-    rawData = restaurantCollection.aggregate_numpy_all([{'$match': {"order_status": int(orderStatus),
+    rawData = orderCollection.aggregate_numpy_all([{'$match': {"order_status": int(orderStatus),
                                                                     "order_restaurant_carrier_restaurantId": {
                                                                         "$in": filterrestTaurantCode}
                                                                     }}], schema=orderSchema)

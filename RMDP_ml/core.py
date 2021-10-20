@@ -413,4 +413,4 @@ def computeState(agent, city):
     return state[0] * 50 + state[1]
 
 
-generateThread()
+#generateThread()

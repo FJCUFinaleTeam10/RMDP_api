@@ -6,17 +6,18 @@ from RMDP_ml import core
 from RMDP_ml import userSimulator
 from RMDP_ml import driverSimulator
 
-
+'''
 @shared_task
 def run_RMDP():
     core.generateThread()
-
+'''
 
 @shared_task
 def generatingOrder():
     userSimulator.generateThread()
 
-
+'''
 @shared_task
 def updateDriver():
     driverSimulator.generateThread()
+'''
