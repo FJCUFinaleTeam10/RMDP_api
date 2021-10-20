@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
-# from celery import task
-# from django.utils.timezone import now
+from celery import task
+from RMDP_ml import userSimulator
 
 
 # @task
@@ -16,3 +16,8 @@ from __future__ import absolute_import, unicode_literals
 #     instance = RMDP(delay, maxLengthPost, maxTimePost, capacity, velocity, restaurantRepareTime,deadlineTime)
 #     currentTime = now()
 #     instance.runRMDP([unAsignerOrder])
+
+
+@task
+def generatingOrder():
+    userSimulator.generateThread()

@@ -1,57 +1,53 @@
 import logging
 import math
-import os
 import random
-import uuid
-from concurrent.futures import ThreadPoolExecutor
+from collections import OrderedDict
 from datetime import datetime
 
-from Database_Operator.Mongo_Operator import Mongo_Operate
+import numba as nb
+import numpy as np
+import pyarrow
+
 from Math import Geometry
+from RMDP_ml.Database_Operator import Mongo_Operator
+
+spec = OrderedDict()
+spec['DEBUG'] = nb.boolean
+spec['p'] = nb.float64
+p = math.pi / 180
 
 
-# from Math import Geometry
-class userSimulator:
+def generateThread():
+    logging.info("start generating")
+    cityList = Mongo_Operator.getAllCity()
+    np.apply_along_axis(generateOrder, axis=1, arr=cityList)
 
-    def __init__(self):
-        self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
-        self.DBclient = Mongo_Operate()
-        self.p = math.pi / 180
 
-    def generateThread(self):
-        cityList = self.DBclient.getAllCity()
-        totalCurrentWorker = 2
-        logging.info("start generating")
-        with ThreadPoolExecutor(max_workers=totalCurrentWorker) as executor:
-            for i in range(len(cityList)):
-                executor.submit(self.generateOrder, cityList[i], )
-
-    def generateOrder(self, currentCity):
-        try:
-            generatedLocation = Geometry.randomLocation(currentCity['Longitude'], currentCity['Latitude'],
-                                                        currentCity['radius'])
-            filteredRestaurantId = self.DBclient.getRestaurantIDBaseOnCityData(currentCity['City'])
-            targetRestaurantId = filteredRestaurantId[random.randint(0, len(filteredRestaurantId) - 1)]['Restaurant_ID']
-            currentOrderCount = self.DBclient.getRestaurantOrderCount(targetRestaurantId)
-
-            self.DBclient.insertOrder({
-                'order_approved_at': None,
-                'order_delivered_customer_date': None,
-                'order_restaurant_carrier_date': None,
-                'driver_id': None,
-                'order_estimated_delivery_date': None,
-                'Longitude': generatedLocation[1],
-                'Latitude': generatedLocation[0],
-                'order_request_time': datetime.now(),
-                'order_restaurant_carrier_restaurantId': targetRestaurantId,
-                'order_status': 0,
-                'Order_ID': int(currentOrderCount + 1),
-                'Qtable_position': 0,
-                'Qtable_updated': 0,
-                'customer_phone_number': None
-            })
-        except Exception as e:
-            logging.critical(e, exc_info=True)
+def generateOrder(currentCity):
+    try:
+        # 'City_id','Country_Code','Latitude','Longitude','radius'
+        generatedLocation = Geometry.randomLocation(currentCity[2], currentCity[1], currentCity[0])
+        filteredRestaurantId = Mongo_Operator.getRestaurantIDBaseOnCityId(currentCity[0])
+        targetRestaurantId = filteredRestaurantId[random.randint(0, len(filteredRestaurantId) - 1)]
+        currentOrderCount = Mongo_Operator.getRestaurantOrderCount(targetRestaurantId)
+        Mongo_Operator.insertOrder({
+            'order_approved_at': None,
+            'order_delivered_customer_date': None,
+            'order_restaurant_carrier_date': None,
+            'driver_id': None,
+            'order_estimated_delivery_date': None,
+            'Longitude': generatedLocation[1],
+            'Latitude': generatedLocation[0],
+            'order_request_time': datetime.now(),
+            'order_restaurant_carrier_restaurantId': int(targetRestaurantId),
+            'order_status': 0,
+            'Order_ID': int(currentOrderCount)+1,
+            'Qtable_position': 0,
+            'Qtable_updated': 0,
+            'customer_phone_number': None
+        })
+    except Exception as e:
+        logging.critical(e, exc_info=True)
 
 
 #   unassigned: 0
@@ -60,5 +56,4 @@ class userSimulator:
 #   head ToCus: 3
 #   deliverd: 4
 
-test = userSimulator()
-test.generateThread()
+

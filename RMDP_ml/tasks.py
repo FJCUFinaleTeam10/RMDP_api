@@ -2,25 +2,21 @@ from __future__ import absolute_import, unicode_literals
 
 from celery import shared_task
 
-from RMDP_ml.core import RMDP
-from RMDP_ml.userSimulator import userSimulator
-from RMDP_ml.driverSimulator import driverSimulator
+from RMDP_ml import  core
+from RMDP_ml import userSimulator
+from RMDP_ml import  driverSimulator
 
 
 @shared_task
 def run_RMDP():
-    pass
-    # currentTask = RMDP()
-    # currentTask.generateThread()
+    core.generateThread()
 
 
 @shared_task
 def generatingOrder():
-    currentTask = userSimulator()
-    currentTask.generateThread()
+    userSimulator.generateThread()
 
 
 @shared_task
 def updateDriver():
-    currentTask = driverSimulator()
-    currentTask.generateThread()
+    driverSimulator.generateThread()

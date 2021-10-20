@@ -99,6 +99,7 @@ services:
       - redis
     networks:
       - rmdp_api
+    restart: always
 networks:
   rmdp_api:
     driver: bridge
