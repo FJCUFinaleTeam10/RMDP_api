@@ -26,4 +26,3 @@ def getMenuBaseOnRestaurant(request):
         return response
     except Exception:
         print(Exception)
-

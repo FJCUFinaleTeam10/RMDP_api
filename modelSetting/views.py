@@ -12,10 +12,6 @@ def listAll(request):
     driverList = driver.objects.all()
     result = DriverSerializer(driverList, many=True)
     response = JsonResponse(result.data, safe=False)
-    response["Access-Control-Allow-Origin"] = "*"
-    response["Access-Control-Allow-Methods"] = "POST"
-    response["Access-Control-Max-Age"] = "1000"
-    response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
     return response
 
 
@@ -25,8 +21,4 @@ def getDriverBaseOnCity(request):
     driverList = driver.objects(City=cityName)
     result = DriverSerializer(driverList, many=True)
     response = JsonResponse(result.data, safe=False)
-    response["Access-Control-Allow-Origin"] = "*"
-    response["Access-Control-Allow-Methods"] = "POST"
-    response["Access-Control-Max-Age"] = "1000"
-    response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
     return response
