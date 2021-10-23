@@ -1,23 +1,23 @@
 from celery import shared_task
 
-from RMDP_ml.userSimulator import userSimulator
-from RMDP_ml.driverSimulator import driverSimulator
-from RMDP_ml.new_core import SA
 
 
+from RMDP_ml import new_core
+from RMDP_ml import userSimulator
+from RMDP_ml import driverSimulator
+
+'''
 @shared_task
 def run_RMDP():
-    currentTask = SA()
-    currentTask.generateThread()
-
+    new_core.generateThread()
+'''
 
 @shared_task
 def generatingOrder():
-    currentTask = userSimulator()
-    currentTask.generateThread()
+    userSimulator.generateThread()
 
-
+'''
 @shared_task
 def updateDriver():
-    currentTask = driverSimulator()
-    currentTask.generateThread()
+    driverSimulator.generateThread()
+'''

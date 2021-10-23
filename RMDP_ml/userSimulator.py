@@ -4,7 +4,7 @@ import random
 from collections import OrderedDict
 from datetime import datetime
 
-import numba as nb
+#import numba as nb
 import numpy as np
 import pyarrow
 
