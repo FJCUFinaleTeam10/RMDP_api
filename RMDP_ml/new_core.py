@@ -17,9 +17,8 @@ class SA:
         #RMDP_setting
         self.S = 0
         self.time_buffer = timedelta(minutes=0)
-        self.t_Pmax = timedelta(seconds=40)
-        self.t_ba = 10
-        self.delay = 5
+        self.t_Pmax = timedelta(seconds=40)#postponement_limit_time
+        self.t_ba = 10#maxtime_of_system_get_order_to_finish_order
         self.capacity = 5
         self.velocity: float = 50 * 0.2777777777777778
         self.restaurantPrepareTime = timedelta(minutes=20)
