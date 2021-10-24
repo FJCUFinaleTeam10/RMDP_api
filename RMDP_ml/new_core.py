@@ -11,9 +11,8 @@ from RMDP_ml.Database_Operator import Mongo_Operator
 DEBUG = False if int(os.environ['DEBUG']) == 1 else True
 S = 0
 time_buffer = timedelta(minutes=0)
-t_Pmax = timedelta(seconds=40)
-t_ba = 10
-delay = 5
+t_Pmax = timedelta(seconds=40)#postponement_limit_time
+t_ba = 10#maxtime_of_system_get_order_to_finish_order
 capacity = 5
 velocity: float = 50 * 0.2777777777777778
 restaurantPrepareTime = timedelta(minutes=20)
@@ -36,7 +35,7 @@ def sequencePermutation(city):
         eta = 0.95
         k = 1
         # RMDP setting
-        pairdOrder = []
+        pairdOrder = np.zeros(shape=(0,13))
         # simulated annealing
         t = initT
         counter = 0
@@ -144,20 +143,20 @@ def runRMDP(cityName, unAssignOrder, postponedOrder, driverList, restaurantList,
     P_hat = postponedOrder.copy()  # waitting order
     currentPairdOrder = pairdOrder.copy()
     currentQ_setting = q_setting.copy()
-    for D in unAssignOrder.iloc:
-        currentPairdRestaurent = restaurantList[
-            restaurantList['Restaurant_ID'] == D["order_restaurant_carrier_restaurantId"]]
+    for D in unAssignOrder:
+        currentPairdRestaurent = next(  restaurant for restaurant in restaurantList if restaurant[0] == D[11])
         if skipPostponement:
             currentPairdDriverId, currentQ_setting, D = Qing(D, currentPairdRestaurent, currentDriverList,
                                                              cityName,
                                                              currentQ_setting)
-            D["driver_id"] = currentDriverList[currentPairdDriverId]['Driver_ID']
-            currentDriverList[currentPairdDriverId]['Capacity'] += 1  # why assign twice
-            currentDriverList[currentPairdDriverId]['Route'] = copy.deepcopy(
-                AssignOrder(D, currentDriverList[currentPairdDriverId], currentPairdRestaurent))
-            currentPairdOrder.append(D)
+            D[0] = currentDriverList[currentPairdDriverId][0]
+            currentDriverList[currentPairdDriverId][6] += 1
+            currentDriverRoute = Mongo_Operator.getDriverRouteBaseOnDriverID(int(D[0]))
+            currentDriverRoute = copy.deepcopy(
+                AssignOrder(D, currentDriverList[currentPairdDriverId], currentPairdRestaurent,currentDriverRoute))
+            pairdOrder = np.hstack(pairdOrder,D)
         elif Postponement(P_hat, D, maxLengthPost):
-            P_hat.append(D)
+            P_hat = np.hstack(P_hat,D)
         else:
             while D['order_request_time'] - P_hat[0]['order_request_time'] >= t_Pmax and len(P_hat) > 0:
                 PairedRestaurent = copy.deepcopy(next(restaurant for restaurant in restaurantList if
@@ -210,7 +209,7 @@ def deltaSDelay(self, route, Longitude, Latitude):
     return max(0, delay)
 
 
-def AssignOrder(self, order, pairedDriver, currentParedRestaurent):
+def AssignOrder(self, order, pairedDriver, currentParedRestaurent,currentDriverRoute):
     try:
         if not pairedDriver['Route']:
             pairedDriver['Route'].append(currentParedRestaurent)

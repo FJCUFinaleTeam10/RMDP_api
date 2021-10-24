@@ -30,10 +30,29 @@ all_citiesCollection = databaseName["all_cities"]
 country_codeCollection = databaseName["country_code"]
 orderCollection = databaseName["order"]
 qlearningCollection = databaseName["Q_learning"]
-
-driverPandasSchema = ['_id', 'Capacity', 'City', 'Country_Code', 'Latitude', 'Longitude', 'Velocity',
-                'Driver_ID', 'Reward', 'Route', 'State']
-
+RouteCollection = databaseName["Route"]
+driverPandasSchema = Schema({
+    'Driver_ID': pyarrow.int64(),
+    'Country_Code': pyarrow.int64(),
+    'City_id': pyarrow.int64(),
+    'Longitude': pyarrow.float64(),
+    'Latitude': pyarrow.float64(),
+    'Velocity': pyarrow.int64(),
+    'Capacity': pyarrow.int64(),
+    'State': pyarrow.int64(),
+    'Reward': pyarrow.int64(),
+    'Node_ID': pyarrow.int64(),
+    'Node_num': pyarrow.int64()
+})
+routeSchema = Schema({'Driver_ID':pyarrow.int64()
+                     ,'Latitude' :pyarrow.float64()
+                     ,'Longitude':pyarrow.float64()
+                     ,'nodetype':pyarrow.int64()
+                     ,'Restaurant_ID':pyarrow.int64(),
+                      'Order_ID':pyarrow.int64(),
+                      'Node_ID':pyarrow.int64()
+                         ,'delivered':pyarrow.int64()
+                      })
 orderSchema = Schema({'driver_id': pyarrow.int64(),
                       'order_approved_at': pyarrow.timestamp('ms'),
                       'Latitude': pyarrow.float64(),
@@ -76,13 +95,12 @@ def getAllCity():
 
 
 def getDriverBaseOnCity(cityId):
-    rawData = driverCollection.find_numpy_all({'City_id': int(cityId)}, schema=citySchema)
+    rawData = driverCollection.find_numpy_all({'City_id': int(cityId)}, schema=driverPandasSchema)
 
-    return np.vstack((rawData['Country_Code'],
-                      rawData['Latitude'],
-                      rawData['Longitude'],
-                      rawData['radius'],
-                      rawData['City_id'])).T
+    return np.vstack((rawData['Driver_ID'],rawData['Country_Code'],
+    rawData['City_id'] ,rawData['Longitude'],
+    rawData['Latitude'],rawData['Velocity'],rawData['Capacity'],rawData['State'],
+    rawData['Reward'],rawData['Node_ID'],rawData['Node_num'])).T
 
 
 def getHasOrderDriverBaseOnCity(cityId):
@@ -135,7 +153,21 @@ def getRestaurantListBaseOnCity(cityId):
 
 
 
-
+def getDriverRouteBaseOnDriverID(driverId):
+    rawData =RouteCollection.find_numpy_all({'Driver_ID': int(driverId)}, schema=routeSchema)
+    if len(rawData)==0:
+        return np.zeros(shape=(0,8))
+    else:
+        return np.vstack((
+            rawData['Driver_ID']
+            , rawData['Latitude']
+        , rawData['Longitude']
+        , rawData['nodetype']
+        , rawData['Restaurant_ID'],
+        rawData['Order_ID'],
+        rawData['Node_ID']
+        , rawData['delivered']
+        )).T
 
 
 
@@ -187,7 +219,19 @@ def updateDriver(self, driver):
         },
     })
 
-
+def updateRestaurantOrdernum(restaurantID,currentordernum):
+    try:
+        restaurantCollection.update_one({
+            'Restaurant_ID':int(restaurantID)
+        },{
+            '$set': {
+                'order_num':int(currentordernum)
+            }
+        }, upsert=False)
+    except PyMongoError as py_mongo_error:
+        logging.critical(py_mongo_error, exc_info=True)
+    except Exception as e:
+        logging.critical(e, exc_info=True)
 def updateOrder(self, order):
     try:
         self.orderCollection.update_one({
@@ -272,7 +316,7 @@ def getQlearning(cityName):
 
 def updateQlearning(self, q_setting):
     try:
-        self.qlearningCollection.update_one({
+        qlearningCollection.update_one({
             'City_id': q_setting[0][0]
         }, {
             '$set': {

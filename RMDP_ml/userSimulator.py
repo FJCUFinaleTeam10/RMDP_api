@@ -24,6 +24,7 @@ def generateOrder(currentCity):
     try:
         # 'City_id','Country_Code','Latitude','Longitude','radius'
         generatedLocation = Geometry.randomLocation(currentCity[3], currentCity[2], currentCity[4])
+        restaurant = Mongo_Operator.getRestaurantListBaseOnCity(currentCity[0])
         filteredRestaurantId = Mongo_Operator.getRestaurantIDBaseOnCityId(currentCity[0])
         targetRestaurantId = filteredRestaurantId[random.randint(0, len(filteredRestaurantId) - 1)]
         currentOrderCount = Mongo_Operator.getRestaurantOrderCount(targetRestaurantId)
@@ -43,6 +44,8 @@ def generateOrder(currentCity):
             'Qtable_updated': 0,
             'customer_phone_number': None
         })
+
+        Mongo_Operator.updateRestaurantOrdernum(float(targetRestaurantId),currentOrderCount+1)
     except Exception as e:
         logging.critical(e, exc_info=True)
 
@@ -52,5 +55,5 @@ def generateOrder(currentCity):
 #   headToRes: 2
 #   head ToCus: 3
 #   deliverd: 4
-#generateThread()
+generateThread()
 
