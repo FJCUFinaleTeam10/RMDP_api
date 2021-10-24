@@ -21,11 +21,8 @@ class userSimulator:
 
     def generateThread(self):
         cityList = self.DBclient.getAllCity()
-        totalCurrentWorker = 2
-        logging.info("start generating")
-        with ThreadPoolExecutor(max_workers=totalCurrentWorker) as executor:
-            for i in range(len(cityList)):
-                executor.submit(self.generateOrder, cityList[i], )
+        for i in range(len(cityList)):
+            self.generateOrder(cityList[i])
 
     def generateOrder(self, currentCity):
         try:

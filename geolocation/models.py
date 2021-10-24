@@ -4,6 +4,7 @@ from mongoengine import *
 
 class all_cities(Document):
     City = StringField()
+    City_id = IntField()
     Country_Code = IntField()
     Latitude = FloatField()
     Longitude = FloatField()

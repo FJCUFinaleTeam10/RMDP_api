@@ -56,7 +56,12 @@ def getOrderBaseOnCity(request):
         restaurant = get_model('restaurant')
         filteredCityList = list(restaurant.objects(City=cityName).values_list('Restaurant_ID'))
 
-        orderList = order.objects(order_restaurant_carrier_restaurantId__in=filteredCityList)
+        filterSet = request.data['params']
+        cityName = filterSet.get('city', 'Agra')
+        skip = filterSet.get('skip', 0)
+        limit = filterSet.get('limit', 1000)
+
+        orderList = order.objects(order_restaurant_carrier_restaurantId__in=filteredCityList).skip(skip).limit(limit)
         result = OrderSerializer(orderList, many=True)
         response = JsonResponse(result.data, safe=False)
         response["Access-Control-Allow-Origin"] = "*"

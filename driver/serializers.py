@@ -6,8 +6,9 @@ from .models import driver
 class DriverSerializer(DocumentSerializer):
     class Meta:
         model = driver
-
+        fields = '__all__'
 
 class GenerateDriverSerializer(DocumentSerializer):
     class Meta:
         model = driver
+        fields = '__all__'

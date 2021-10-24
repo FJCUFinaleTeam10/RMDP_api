@@ -30,8 +30,9 @@ class driverSimulator:
     def updateDriverLocation(self, cityName):
         try:
             driverList = self.DBclient.getHasOrderDriverBaseOnCity(cityName)
-            #driverA = list(driver for driver in driverList if len(driver['Route']) > 0)
-            for currentDriver in list(driver for driver in driverList if len(driver['Route']) > 0):#get driver route > 0 in list
+            # driverA = list(driver for driver in driverList if len(driver['Route']) > 0)
+            for currentDriver in list(
+                    driver for driver in driverList if len(driver['Route']) > 0):  # get driver route > 0 in list
                 targetDestination = currentDriver['Route'][0]
                 # distance between target distance and current driver
                 DistanceRemain = Geometry.coorDistance(currentDriver['Latitude'],
@@ -54,7 +55,7 @@ class driverSimulator:
                     else:
                         currentOrder['order_status'] = 'headToCus'
                         currentOrder['order_restaurant_carrier_date'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-                    #self.DBclient.updateOrder(targetDestination)
+                    # self.DBclient.updateOrder(targetDestination)
                     self.DBclient.updateOrder(currentOrder)
                     if currentDriver['Route'] is None:
                         currentDriver['Velocity'] = 0
@@ -74,11 +75,7 @@ class driverSimulator:
                                                        currentDriver['Longitude'],
                                                        targetDestination['Latitude'],
                                                        targetDestination['Longitude'])
-                print(DistanceRemain," ",aftterDIstance)
+                print(DistanceRemain, " ", aftterDIstance)
                 self.DBclient.updateDriver(currentDriver)
         except Exception as e:
             logging.critical(e, exc_info=True)
-
-
-test = driverSimulator()
-test.generateThread()
