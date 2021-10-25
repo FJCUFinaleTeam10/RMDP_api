@@ -34,6 +34,7 @@ class RMDP:
         cityList = self.DBclient.getAllCity()  # get all city
         totalCurrentWorker = 2
         logging.info("start generating")
+
         with ThreadPoolExecutor(max_workers=totalCurrentWorker) as executor:
             threads = []
             for i in range(len(cityList)):
@@ -76,76 +77,78 @@ class RMDP:
             newPospondedOrderList = []
             newPairedOrderList = []
             start = time.time()
-            for permutation in itertools.permutations(unAssignOrder):
 
-                currentDriverList = copy.deepcopy(driverList)
-                P_hat = copy.deepcopy(postponedOrder)  # waitting order
-                currentPairdOrder = copy.deepcopy(pairdOrder)
+           # for permutation in itertools.permutations(unAssignOrder):
+            permutation = unAssignOrder
 
-                for D in permutation:
-                    currentPairdRestaurent = next(restaurant for restaurant in restaurantList if
-                                                  restaurant['Restaurant_ID'] == D[
-                                                      "order_restaurant_carrier_restaurantId"])
-                    '''
-                    currentPairdDriverId = self.Qing(D, currentPairdRestaurent, currentDriverList, cityName)
+            currentDriverList = copy.deepcopy(driverList)
+            P_hat = copy.deepcopy(postponedOrder)  # waitting order
+            currentPairdOrder = copy.deepcopy(pairdOrder)
+
+            for D in permutation:
+                currentPairdRestaurent = next(restaurant for restaurant in restaurantList if
+                                              restaurant['Restaurant_ID'] == D[
+                                                  "order_restaurant_carrier_restaurantId"])
+                '''
+                currentPairdDriverId = self.Qing(D, currentPairdRestaurent, currentDriverList, cityName)
+                D["driver_id"] = currentDriverList[currentPairdDriverId]['Driver_ID']
+                currentDriverList[currentPairdDriverId]['Capacity'] += 1  # why assign twice
+                currentDriverList[currentPairdDriverId]['Route'] = copy.deepcopy(
+                    self.AssignOrder(D, currentDriverList[currentPairdDriverId], currentPairdRestaurent))
+                '''
+
+                if skipPostponement:
+                    currentPairdDriverId = self.Qing(D, currentPairdRestaurent, currentDriverList, cityName,
+                                                     q_setting)
                     D["driver_id"] = currentDriverList[currentPairdDriverId]['Driver_ID']
                     currentDriverList[currentPairdDriverId]['Capacity'] += 1  # why assign twice
                     currentDriverList[currentPairdDriverId]['Route'] = copy.deepcopy(
                         self.AssignOrder(D, currentDriverList[currentPairdDriverId], currentPairdRestaurent))
-                    '''
-
-                    if skipPostponement:
-                        currentPairdDriverId = self.Qing(D, currentPairdRestaurent, currentDriverList, cityName,
-                                                         q_setting)
-                        D["driver_id"] = currentDriverList[currentPairdDriverId]['Driver_ID']
-                        currentDriverList[currentPairdDriverId]['Capacity'] += 1  # why assign twice
-                        currentDriverList[currentPairdDriverId]['Route'] = copy.deepcopy(
-                            self.AssignOrder(D, currentDriverList[currentPairdDriverId], currentPairdRestaurent))
-                        currentPairdOrder.append(D)
+                    currentPairdOrder.append(D)
+                else:
+                    if self.Postponement(P_hat, D, maxLengthPost):
+                        P_hat.append(D)
                     else:
-                        if self.Postponement(P_hat, D, maxLengthPost):
-                            P_hat.append(D)
-                        else:
-                            while D['order_request_time'] - P_hat[0]['order_request_time'] >= self.t_Pmax:
-                                PairedRestaurent = copy.deepcopy(next(restaurant for restaurant in restaurantList if
-                                                                      restaurant['Restaurant_ID'] == P_hat[0][
-                                                                          "order_restaurant_carrier_restaurantId"]
-                                                                      ))
+                        while D['order_request_time'] - P_hat[0]['order_request_time'] >= self.t_Pmax:
+                            PairedRestaurent = copy.deepcopy(next(restaurant for restaurant in restaurantList if
+                                                                  restaurant['Restaurant_ID'] == P_hat[0][
+                                                                      "order_restaurant_carrier_restaurantId"]
+                                                                  ))
+                            PairdDriverId = self.Qing(D, PairedRestaurent, currentDriverList, cityName,
+                                                      q_setting)
+                            P_hat[0]['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
+                            currentDriverList[PairdDriverId]['Capacity'] += 1
+                            currentDriverList[PairdDriverId]['Route'] = copy.deepcopy(
+                                self.AssignOrder(P_hat[0], currentDriverList[PairdDriverId], PairedRestaurent))
+                            currentPairdOrder.append(P_hat[0])  # add finish order
+                            P_hat.pop(0)
+                            if len(P_hat) == 0:
+                                break
+                        if len(P_hat) >= maxLengthPost:
+                            for order in P_hat:
+                                PairedRestaurent = copy.deepcopy(next(
+                                    restaurant for restaurant in restaurantList if
+                                    int(restaurant['Restaurant_ID']) == int(
+                                        order["order_restaurant_carrier_restaurantId"])))
                                 PairdDriverId = self.Qing(D, PairedRestaurent, currentDriverList, cityName,
                                                           q_setting)
-                                P_hat[0]['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
                                 currentDriverList[PairdDriverId]['Capacity'] += 1
+                                order['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
                                 currentDriverList[PairdDriverId]['Route'] = copy.deepcopy(
-                                    self.AssignOrder(P_hat[0], currentDriverList[PairdDriverId], PairedRestaurent))
-                                currentPairdOrder.append(P_hat[0])  # add finish order
-                                P_hat.pop(0)
-                                if len(P_hat) == 0:
-                                    break
-                            if len(P_hat) >= maxLengthPost:
-                                for order in P_hat:
-                                    PairedRestaurent = copy.deepcopy(next(
-                                        restaurant for restaurant in restaurantList if
-                                        int(restaurant['Restaurant_ID']) == int(
-                                            order["order_restaurant_carrier_restaurantId"])))
-                                    PairdDriverId = self.Qing(D, PairedRestaurent, currentDriverList, cityName,
-                                                              q_setting)
-                                    currentDriverList[PairdDriverId]['Capacity'] += 1
-                                    order['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
-                                    currentDriverList[PairdDriverId]['Route'] = copy.deepcopy(
-                                        self.AssignOrder(order, currentDriverList[PairdDriverId],
-                                                         PairedRestaurent))
-                                    currentPairdOrder.append(order)
-                                P_hat.clear()
-                            P_hat.append(D)
+                                    self.AssignOrder(order, currentDriverList[PairdDriverId],
+                                                     PairedRestaurent))
+                                currentPairdOrder.append(order)
+                            P_hat.clear()
+                        P_hat.append(D)
 
-                S = self.TotalDelay(currentDriverList)
-                currentSlack = self.Slack(currentDriverList)
-                if (S < delay) or ((S == delay) and (currentSlack < slack)):
-                    slack = currentSlack
-                    delay = S
-                    newDriverList = copy.deepcopy(currentDriverList)
-                    newPospondedOrderList = copy.deepcopy(P_hat)
-                    newPairedOrderList = copy.deepcopy(currentPairdOrder)
+            S = self.TotalDelay(currentDriverList)
+            currentSlack = self.Slack(currentDriverList)
+            if (S < delay) or ((S == delay) and (currentSlack < slack)):
+                slack = currentSlack
+                delay = S
+                newDriverList = copy.deepcopy(currentDriverList)
+                newPospondedOrderList = copy.deepcopy(P_hat)
+                newPairedOrderList = copy.deepcopy(currentPairdOrder)
 
             driverList = copy.deepcopy(newDriverList)
             postponedOrder = copy.deepcopy(newPospondedOrderList)
@@ -221,14 +224,17 @@ class RMDP:
                 pairedDriver['Route'][0]['Order_ID'] = order['Order_ID']
 
                 pairedDriver['Route'][1]['nodeType'] = 1
-
             else:
-                first: int = 0
-                second: int = 1
+                lastIndex = len(pairedDriver['Route'])
+                pairedDriver['Route'].insert(lastIndex, currentParedRestaurent)
+                pairedDriver['Route'][lastIndex]['nodeType'] = 0
+                pairedDriver['Route'][lastIndex]['Order_ID'] = order['OrderID']
+                ''' second: int = 1
                 minDelayTime = float('inf')
+                
                 for i in range(0, len(pairedDriver['Route']), 1):
                     for j in range(i + 1, len(pairedDriver['Route']) + 2, 1):
-
+                        
                         tmpDriver = copy.deepcopy(pairedDriver)
                         tmpDriver['Route'].insert(i, currentParedRestaurent)
                         tmpDriver['Route'].insert(j, order)
@@ -237,15 +243,17 @@ class RMDP:
                         if minDelayTime > delayTime:
                             minDelayTime = delayTime
                             first = i
-                            second = j
+                            second = j '''
 
-                pairedDriver['Route'].insert(first, currentParedRestaurent)
+                ''' pairedDriver['Route'].insert(first, currentParedRestaurent)
                 pairedDriver['Route'][first]['nodeType'] = 0
                 pairedDriver['Route'][first]['Order_ID'] = order['Order_ID']
 
                 pairedDriver['Route'].insert(second, order)
-                pairedDriver['Route'][second]['nodeType'] = 1
+                pairedDriver['Route'][second]['nodeType'] = 1 '''
             return pairedDriver['Route']
+
+
         except Exception as e:
             logging.critical(e, exc_info=True)
 
