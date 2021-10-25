@@ -223,7 +223,64 @@ class RMDP:
                 pairedDriver['Route'][1]['nodeType'] = 1
 
             else:
-                first: int = 0
+                lastIndex = len(pairedDriver['Route'])
+                pairedDriver['Route'].insert(lastIndex, currentParedRestaurent)
+                pairedDriver['Route'][lastIndex]['nodeType'] = 0
+                pairedDriver['Route'][lastIndex]['Order_ID'] = order['Order_ID']
+                totalRoute = pairedDriver['Route']
+
+                now_route = []
+                now_delay = 0
+                for permutation in itertools.permutations(totalRoute):
+                    for point in permutation:
+                        temp = []
+                        temp_delay = 0
+                        if len(temp) == 0:
+                            temp.insert(0, point)
+                            continue
+                        if point['nodeType'] == 0:  # resturant
+                            counter = 0
+                            for k in temp:
+                                if point['Order_ID'] == k['Order_ID']:
+                                    break
+                                counter += 1
+                            for k in range(0, counter):
+                                temp2 = copy.deepcopy(temp)
+                                temp2.insert(k, point)
+                                temp2_delay = self.deltaSDelay(temp, pairedDriver['Latitude'],
+                                                               pairedDriver['Longitude'])
+                                if k == 0:
+                                    temp = copy.deepcopy(temp2)
+                                    temp_delay = temp2_delay
+                                    continue
+                                else:
+                                    if temp_delay > temp2_delay:
+                                        temp = copy.deepcopy(temp2)
+                                        temp_delay = temp2_delay
+                        else:  # delivery
+                            counter = 0
+                            for k in temp:
+                                if point['Order_ID'] == k['Order_ID']:
+                                    break
+                                counter += 1
+                            for k in range(counter, len(temp)):
+                                temp2 = copy.deepcopy(temp)
+                                temp2.insert(k, point)
+                                temp2_delay = self.deltaSDelay(temp, pairedDriver['Latitude'],
+                                                               pairedDriver['Longitude'])
+                                if k == 0:
+                                    temp = copy.deepcopy(temp2)
+                                    temp_delay = temp2_delay
+                                    continue
+                                else:
+                                    if temp_delay > temp2_delay:
+                                        temp = copy.deepcopy(temp2)
+                                        temp_delay = temp2_delay
+                        if len(now_route) == 0 or now_delay > temp_delay:
+                            now_route = copy.deepcopy(temp)
+                            now_delay = temp_delay
+                pairedDriver['Route'] = copy.deepcopy(now_route)
+                ''' first: int = 0
                 second: int = 1
                 minDelayTime = float('inf')
                 for i in range(0, len(pairedDriver['Route']), 1):
@@ -245,7 +302,7 @@ class RMDP:
 
                 pairedDriver['Route'].insert(second, order)
                 pairedDriver['Route'][second]['nodeType'] = 1
-            return pairedDriver['Route']
+            return pairedDriver['Route'] '''
         except Exception as e:
             logging.critical(e, exc_info=True)
 

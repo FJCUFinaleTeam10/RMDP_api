@@ -15,7 +15,7 @@ class SA:
     def __init__(self):
         self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
         # self.DEBUG = True
-        #RMDP_setting
+        # RMDP_setting
         self.S = 0
         self.time_buffer = timedelta(minutes=0)
         self.t_Pmax = timedelta(seconds=40)
@@ -28,7 +28,6 @@ class SA:
         self.DBclient = Mongo_Operate()
         self.p = math.pi / 180
 
-
     def generateThread(self):
         cityList = self.DBclient.getAllCity()  # get all city
         totalCurrentWorker = 2
@@ -38,38 +37,45 @@ class SA:
             for i in range(len(cityList)):
                 threads.append(executor.submit(self.sequencePermutation, index=i, cityName=(cityList[i])))
 
-    def sequencePermutation(self, index,cityName):
+    def sequencePermutation(self, index, cityName):
         try:
             # parameter init
-            #initT = 1000
+            # initT = 1000
+            '''
             initT = 200
             minT = 1
             iterL = 10
             eta = 0.95
             k = 1
-            #RMDP setting
+            # RMDP setting
             pairdOrder = []
+
             # simulated annealing
             t = initT
             counter = 0
             delay = float("inf")
             slack = 0
-            skipPostponement = False
+            skipPostponement = False '''
             pairdOrder = []
             maxLengthPost = 5
+
+            # baseline first -> use the unAssignOrder sequence and run RMDP
             restaurantList = self.DBclient.getRestaurantListBaseOnCity(cityName['City'])
             driverList = self.DBclient.getDriverBaseOnCity(cityName['City'])
             filterrestTaurantCode = list(
                 map(lambda x: int(x['Restaurant_ID']), restaurantList))  # set all restaurant_id to int
             unAssignOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode,
                                                              "unassigned")  # get unassigned order
+            postponedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "waiting")  # get postpone order
 
+            delay_old,dr_list, post_list, paird_list, q_list = self.runRMDP_baseline(index, cityName, postponedOrder, driverList, restaurantList, pairdOrder, skipPostponement, maxLengthPost)
+
+            '''
             postponedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "waiting")  # get postpone order
 
             finishedOrder = self.DBclient.getOrderBaseOnCity(filterrestTaurantCode, "delivered")
             finishOrder = list(order for order in finishedOrder if order['Qtable_updated'] == 0)
             q_setting = self.DBclient.getQlearning(cityName['City'])
-
 
             for order in unAssignOrder:
                 order['order_request_time'] = datetime.strptime(order['order_request_time'], "%d-%m-%Y %H:%M:%S")
@@ -91,9 +97,10 @@ class SA:
             delay_old,dr_list, post_list, paird_list, q_list = self.runRMDP(index, cityName, old_sequence,postponedOrder,driverList,restaurantList,pairdOrder,skipPostponement,maxLengthPost,q_setting)
 
             start = time.time()
+            '''
             #delay = 0
 
-
+            '''
             while t > minT and len(old_sequence)>1:
                 for _ in range(iterL):  # MonteCarlo method reject propblity
                     #delay_old, driverList_old,postponedOrder_old,pairdorder_old,q_setting_old= self.runRMDP(index,cityName,old_sequence,postponedOrder,driverList,restaurantList,pairdOrder,skipPostponement,maxLengthPost,q_setting)
@@ -122,7 +129,8 @@ class SA:
                         #print(end - start)
                         break
                 t = t * eta
-
+                '''
+            #SA finish
             '''
             if len(old_sequence)<=1:
                 delay_old, driverList_old, postponedOrder_old, pairdorder_old, q_setting_old = self.runRMDP(index,
@@ -140,31 +148,33 @@ class SA:
                 paird_list = copy.deepcopy(pairdorder_old)
                 q_list = copy.deepcopy(q_setting_old)
             '''
+            '''
             driverList = copy.deepcopy(dr_list)
             postponedOrder = copy.deepcopy(post_list)
             pairdOrder = copy.deepcopy(paird_list)
             q_setting = copy.deepcopy(q_list)
+            
             for order in postponedOrder:
-                '''
+                
                 currentPairedDriver = next(
                     driver for driver in driverList if str(driver['Driver_ID']) == str(order['driver_id']))
-                '''
+                
                 index = 0
                 for driver in range(0, len(driverList)):
                     if driverList[driver]['Driver_ID'] == order['driver_id']:
                         index = driver
                         break
-                '''
+                
                 currentPairedDriverId = driverList.index(
                     currentPairedDriver) if currentPairedDriver in driverList else -1
-                '''
-                '''
+                
+                
                 driverList[currentPairedDriverId]['Route'] = copy.deepcopy(list(filter(
                     lambda x: (int(x['nodeType']) == 0 and x['Order_ID'] != order['Order_ID']) or (  # why no string
                             int(x['nodeType']) == 1 and str(x['Order_ID']) != str(order['Order_ID'])),
                     driverList[currentPairedDriverId]['Route'])))
                 driverList[currentPairedDriverId]['Capacity'] -= 1
-                '''
+                
                 driverList[index]['Route'] = copy.deepcopy(list(filter(
                     lambda x: (int(x['nodeType']) == 0 and x['Order_ID'] != order['Order_ID']) or (  # why no string
                             int(x['nodeType']) == 1 and str(x['Order_ID']) != str(order['Order_ID'])),
@@ -173,22 +183,85 @@ class SA:
             self.updateDriver(driverList)
             self.updatePosponedOrder(postponedOrder)
             self.updatePairdOrder(pairdOrder)
-            self.DBclient.updateQlearning(q_setting)
+            self.DBclient.updateQlearning(q_setting) '''
         except Exception as e:
             logging.critical(e, exc_info=True)
 
-            # print("Thread:", index, " is finished")
-
+            print("Thread:", index, " is finished")
 
     def runRMDP(self, index, cityName,unAssignOrder,postponedOrder,driverList,restaurantList,pairdOrder,skipPostponement,maxLengthPost,q_setting):
         try:
-
-
-
                 currentDriverList = copy.deepcopy(driverList)
                 P_hat = copy.deepcopy(postponedOrder)  # waitting order
                 currentPairdOrder = copy.deepcopy(pairdOrder)
                 currentQ_setting = copy.deepcopy(q_setting)
+                S = 0
+                for D in unAssignOrder:
+                    currentPairdRestaurent = next(restaurant for restaurant in restaurantList if
+                                                  restaurant['Restaurant_ID'] == D[
+                                                      "order_restaurant_carrier_restaurantId"])
+                    '''
+                    currentPairdDriverId = self.Qing(D, currentPairdRestaurent, currentDriverList, cityName)
+                    D["driver_id"] = currentDriverList[currentPairdDriverId]['Driver_ID']
+                    currentDriverList[currentPairdDriverId]['Capacity'] += 1  # why assign twice
+                    currentDriverList[currentPairdDriverId]['Route'] = copy.deepcopy(
+                        self.AssignOrder(D, currentDriverList[currentPairdDriverId], currentPairdRestaurent))
+                    '''
+
+                    if skipPostponement:
+                        currentPairdDriverId,currentQ_setting,D= self.Qing(D, currentPairdRestaurent, currentDriverList, cityName,
+                                                         currentQ_setting)
+                        D["driver_id"] = currentDriverList[currentPairdDriverId]['Driver_ID']
+                        currentDriverList[currentPairdDriverId]['Capacity'] += 1  # why assign twice
+                        currentDriverList[currentPairdDriverId]['Route'] = copy.deepcopy(
+                            self.AssignOrder(D, currentDriverList[currentPairdDriverId], currentPairdRestaurent))
+                        currentPairdOrder.append(D)
+                    else:
+                        if self.Postponement(P_hat, D, maxLengthPost):
+                            P_hat.append(D)
+                        else:
+                            while D['order_request_time'] - P_hat[0]['order_request_time'] >= self.t_Pmax:
+                                PairedRestaurent = copy.deepcopy(next(restaurant for restaurant in restaurantList if
+                                                                      restaurant['Restaurant_ID'] == P_hat[0][
+                                                                          "order_restaurant_carrier_restaurantId"]
+                                                                      ))
+                                PairdDriverId ,currentQ_setting,D= self.Qing(D, PairedRestaurent, currentDriverList, cityName,
+                                                          currentQ_setting)
+                                P_hat[0]['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
+                                currentDriverList[PairdDriverId]['Capacity'] += 1
+                                currentDriverList[PairdDriverId]['Route'] = copy.deepcopy(
+                                    self.AssignOrder(P_hat[0], currentDriverList[PairdDriverId], PairedRestaurent))
+                                currentPairdOrder.append(P_hat[0])  # add finish order
+                                P_hat.pop(0)
+                                if len(P_hat) == 0:
+                                    break
+                            if len(P_hat) >= maxLengthPost:
+                                for order in P_hat:
+                                    PairedRestaurent = copy.deepcopy(next(
+                                        restaurant for restaurant in restaurantList if
+                                        int(restaurant['Restaurant_ID']) == int(
+                                            order["order_restaurant_carrier_restaurantId"])))
+                                    PairdDriverId ,currentQ_setting,D= self.Qing(D, PairedRestaurent, currentDriverList, cityName,
+                                                              currentQ_setting)
+                                    currentDriverList[PairdDriverId]['Capacity'] += 1
+                                    order['driver_id'] = str(currentDriverList[PairdDriverId]['Driver_ID'])
+                                    currentDriverList[PairdDriverId]['Route'] = copy.deepcopy(
+                                        self.AssignOrder(order, currentDriverList[PairdDriverId],
+                                                         PairedRestaurent))
+                                    currentPairdOrder.append(order)
+                                P_hat.clear()
+                            P_hat.append(D)
+
+                S = self.TotalDelay(currentDriverList)
+                return S,currentDriverList,P_hat,currentPairdOrder,currentQ_setting
+        except Exception as e:
+            logging.critical(e, exc_info=True)
+
+    def runRMDP_baseline(self, index, cityName, unAssignOrder, postponedOrder, driverList, restaurantList, pairdOrder, skipPostponement, maxLengthPost):
+        try:
+                currentDriverList = copy.deepcopy(driverList)
+                P_hat = copy.deepcopy(postponedOrder)  # waitting order
+                currentPairdOrder = copy.deepcopy(pairdOrder)
                 S = 0
                 for D in unAssignOrder:
                     currentPairdRestaurent = next(restaurant for restaurant in restaurantList if
@@ -406,6 +479,7 @@ class SA:
                 self.DBclient.updateOrder(order)
         except Exception as e:
             logging.critical(e, exc_info=True)
+
 
     def Qing(self, Ds_0, restaurant, drlist, city, q_setting):
         # for episode in range(self.total_episodes):
