@@ -77,7 +77,6 @@ class RMDP:
             newPairedOrderList = []
             start = time.time()
             for permutation in itertools.permutations(unAssignOrder):
-
                 currentDriverList = copy.deepcopy(driverList)
                 P_hat = copy.deepcopy(postponedOrder)  # waitting order
                 currentPairdOrder = copy.deepcopy(pairdOrder)
@@ -223,7 +222,11 @@ class RMDP:
                 pairedDriver['Route'][1]['nodeType'] = 1
 
             else:
-                first: int = 0
+                lastIndex = len(pairedDriver['Route'])
+                pairedDriver['Route'].insert(lastIndex, currentParedRestaurent)
+                pairedDriver['Route'][lastIndex]['nodeType'] = 0
+                pairedDriver['Route'][lastIndex]['Order_ID'] = order['OrderID']
+                ''' first: int = 0
                 second: int = 1
                 minDelayTime = float('inf')
                 for i in range(0, len(pairedDriver['Route']), 1):
@@ -244,7 +247,7 @@ class RMDP:
                 pairedDriver['Route'][first]['Order_ID'] = order['Order_ID']
 
                 pairedDriver['Route'].insert(second, order)
-                pairedDriver['Route'][second]['nodeType'] = 1
+                pairedDriver['Route'][second]['nodeType'] = 1 '''
             return pairedDriver['Route']
         except Exception as e:
             logging.critical(e, exc_info=True)
