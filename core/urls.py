@@ -23,8 +23,9 @@ urlpatterns = [
     path('order/createOrder/', createOrder, name='index'),
     path('order/baseoncity/', getOrderBaseOnCity, name='index'),
 
-    path('getMenu/', getMenu, name='index'),
-    path('baseonrestaurant/', getMenuBaseOnRestaurant, name='index'),
+    path('menu/getMenu/', getMenu, name='index'),
+    path('menu/baseonrestaurant/', getMenuBaseOnRestaurant, name='index'),
+    path('menu/createorder/', getMenuBaseOnRestaurant, name='index'),
 
     path('geolocation/getcity/', getCities),
     path('geolocation/getallcountrycode/', getAllCountryCode),
