@@ -1,4 +1,3 @@
-
 from django.contrib import admin
 from django.urls import path
 
@@ -7,6 +6,7 @@ from geolocation.views import getAllCountryCode, getAllCities, getCountryCode, g
 from menu.views import getMenu, getMenuBaseOnRestaurant
 from order.views import createOrder, getOrderBaseOnCity
 from restaurant.views import listAllRestaurantList, getRestaurantBaseOnId, getRestaurantBaseOnCity, listRestaurantList
+from RMDP_env.views import listAllSetting
 
 urlpatterns = [
     path('admin/', admin.site.urls, name='index'),
@@ -23,12 +23,12 @@ urlpatterns = [
     path('order/createOrder/', createOrder, name='index'),
     path('order/baseoncity/', getOrderBaseOnCity, name='index'),
 
-
     path('getMenu/', getMenu, name='index'),
     path('baseonrestaurant/', getMenuBaseOnRestaurant, name='index'),
 
     path('geolocation/getcity/', getCities),
     path('geolocation/getallcountrycode/', getAllCountryCode),
     path('geolocation/getCountryCode/', getCountryCode),
-    path('geolocation/getallcities/', getAllCities)
+    path('geolocation/getallcities/', getAllCities),
+    path('envsetting/getallsetting/', listAllSetting)
 ]

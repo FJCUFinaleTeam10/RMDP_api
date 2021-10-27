@@ -30,7 +30,8 @@ INSTALLED_APPS = [
     'geolocation',
     'menu',
     'order',
-    'RMDP_ml'
+    'RMDP_ml',
+    'RMDP_env'
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

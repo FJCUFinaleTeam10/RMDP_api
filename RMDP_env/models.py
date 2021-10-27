@@ -1,15 +1,16 @@
+
+
 from mongoengine import *
 
 
 # Create your models here.
 class RMDP_env(Document):
-    Order_num = IntField()
-    all_driver_routing_Theta_x = ListField()
     capacity = IntField()
     deadlineTime = IntField()
     delay = IntField()
     maxLengthPost = IntField()
-    maxtime_of_system_
-
-
-
+    restaurantPrepareTime = IntField()
+    t_Pmax = IntField()
+    t_ba = IntField()
+    time_buffer = IntField()
+    velocity = FloatField()
