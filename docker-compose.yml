@@ -68,7 +68,7 @@ services:
       - rmdp_api
   celery:
     build: .
-    command: celery -A core worker -l info
+    command: celery -A core worker -l info -c 1
     volumes:
       - .:/usr/src/app/
     environment:
