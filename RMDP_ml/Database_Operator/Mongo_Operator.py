@@ -18,7 +18,7 @@ class Mongo_Operate:
         self.all_citiesCollection = self.databaseName["all_cities"]
         self.country_codeCollection = self.databaseName["country_code"]
         self.orderCollection = self.databaseName["order"]
-        self.qlearningCollection = self.databaseName["Q_learning"]
+        self.qlearningCollection = self.databaseName["q_learning"]
 
     def getMongoClientUrl(self, DEBUG):
         if DEBUG:
