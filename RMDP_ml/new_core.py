@@ -409,6 +409,3 @@ def computeState(agent, city):
              int(abs(float(city['Longitude']) - float(city['radius']) - float(agent['Longitude'])) / (
                      float(city['radius']) * 2 / 50))]
     return state[0] * 50 + state[1]
-
-
-generateThread()
