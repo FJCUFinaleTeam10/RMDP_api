@@ -7,7 +7,7 @@ from menu.views import getMenu, getMenuBaseOnRestaurant
 from order.views import createOrder, getOrderBaseOnCity
 from restaurant.views import listAllRestaurantList, getRestaurantBaseOnId, getRestaurantBaseOnCity, listRestaurantList
 from rmdp_env.views import listAllSetting, getSettingBaseOneCity, updateSetting
-
+from q_learning.views import  getQlearningBaseOnCity
 urlpatterns = [
     path('admin/', admin.site.urls, name='index'),
 
@@ -35,4 +35,5 @@ urlpatterns = [
     path('envsetting/getsettingbaseoncity/', getSettingBaseOneCity),
     path('envsetting/updatesetting/', updateSetting),
 
+    path('qlearning/getqlearningbaseoncity/', getQlearningBaseOnCity),
 ]
