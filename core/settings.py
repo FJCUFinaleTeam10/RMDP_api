@@ -31,7 +31,7 @@ INSTALLED_APPS = [
     'menu',
     'order',
     'RMDP_ml',
-    'RMDP_env'
+    'rmdp_env'
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

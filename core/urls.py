@@ -6,7 +6,7 @@ from geolocation.views import getAllCountryCode, getAllCities, getCountryCode, g
 from menu.views import getMenu, getMenuBaseOnRestaurant
 from order.views import createOrder, getOrderBaseOnCity
 from restaurant.views import listAllRestaurantList, getRestaurantBaseOnId, getRestaurantBaseOnCity, listRestaurantList
-from RMDP_env.views import listAllSetting
+from rmdp_env.views import listAllSetting, getSettingBaseOneCity, updateSetting
 
 urlpatterns = [
     path('admin/', admin.site.urls, name='index'),
@@ -30,5 +30,9 @@ urlpatterns = [
     path('geolocation/getallcountrycode/', getAllCountryCode),
     path('geolocation/getCountryCode/', getCountryCode),
     path('geolocation/getallcities/', getAllCities),
-    path('envsetting/getallsetting/', listAllSetting)
+
+    path('envsetting/getallsetting/', listAllSetting),
+    path('envsetting/getsettingbaseoncity/', getSettingBaseOneCity),
+    path('envsetting/updatesetting/', updateSetting),
+
 ]

@@ -11,6 +11,7 @@ class rmdp_env(Document):
     maxLengthPost = IntField()
     restaurantPrepareTime = IntField()
     t_Pmax = IntField()
+    City = StringField()
     t_ba = IntField()
     time_buffer = IntField()
     velocity = FloatField()

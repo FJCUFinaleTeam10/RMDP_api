@@ -1,5 +1,5 @@
 from rest_framework_mongoengine.serializers import DocumentSerializer
-from RMDP_env.models import rmdp_env
+from rmdp_env.models import rmdp_env
 
 
 class RMDP_envSerializer(DocumentSerializer):
