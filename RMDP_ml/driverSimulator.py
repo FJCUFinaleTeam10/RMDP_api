@@ -1,5 +1,3 @@
-# from generatingData import generateTestData
-# from Math.Geometry import interSectionCircleAndLine
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
@@ -13,7 +11,6 @@ from RMDP_ml.Math import Geometry
 class driverSimulator:
     def __init__(self):
         self.totalCurrentWorker = 2
-        self.DEBUG = False if int(os.environ['DEBUG']) == 1 else True
         self.DBclient = Mongo_Operate()
         self.updateTime = 1
 
@@ -30,15 +27,11 @@ class driverSimulator:
     def updateDriverLocation(self, cityName):
         try:
             driverList = self.DBclient.getHasOrderDriverBaseOnCity(cityName)
-            # driverA = list(driver for driver in driverList if len(driver['Route']) > 0)
             for currentDriver in list(
                     driver for driver in driverList if len(driver['Route']) > 0):  # get driver route > 0 in list
                 targetDestination = currentDriver['Route'][0]
-                # distance between target distance and current driver
-                DistanceRemain = Geometry.coorDistance(currentDriver['Latitude'],
-                                                       currentDriver['Longitude'],
-                                                       targetDestination['Latitude'],
-                                                       targetDestination['Longitude'])
+                DistanceRemain = Geometry.coorDistance(currentDriver['Latitude'], currentDriver['Longitude'],
+                                                       targetDestination['Latitude'], targetDestination['Longitude'])
                 # the distance of each update time
                 DistanceTraveled = (currentDriver['Velocity'] * self.updateTime) / 1000
                 # transform distance to degree
@@ -51,10 +44,10 @@ class driverSimulator:
                     if travelLocation['nodeType'] == 1:
                         currentOrder['order_status'] = 'delivered'
                         currentDriver['Capacity'] -= 1
-                        currentOrder['order_delivered_customer_date'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                        currentOrder['order_delivered_customer_date'] = datetime.now()
                     else:
                         currentOrder['order_status'] = 'headToCus'
-                        currentOrder['order_restaurant_carrier_date'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                        currentOrder['order_restaurant_carrier_date'] = datetime.now()
                     # self.DBclient.updateOrder(targetDestination)
                     self.DBclient.updateOrder(currentOrder)
                     if currentDriver['Route'] is None:
@@ -71,10 +64,8 @@ class driverSimulator:
                     currentDriver['Latitude'] = updatedLat
                     currentDriver['Longitude'] = updatedLon
                     # logging.info("updateded")
-                aftterDIstance = Geometry.coorDistance(currentDriver['Latitude'],
-                                                       currentDriver['Longitude'],
-                                                       targetDestination['Latitude'],
-                                                       targetDestination['Longitude'])
+                aftterDIstance = Geometry.coorDistance(currentDriver['Latitude'], currentDriver['Longitude'],
+                                                       targetDestination['Latitude'], targetDestination['Longitude'])
                 print(DistanceRemain, " ", aftterDIstance)
                 self.DBclient.updateDriver(currentDriver)
         except Exception as e:

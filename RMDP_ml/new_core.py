@@ -542,5 +542,3 @@ class SA:
         if return_state>2499:
             return_state = 2499
         return return_state
-TEST = SA()
-TEST.generateThread()
