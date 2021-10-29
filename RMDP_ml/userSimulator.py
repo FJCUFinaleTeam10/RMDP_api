@@ -28,11 +28,12 @@ def generateOrder(currentCity):
         filteredRestaurantId = Mongo_Operator.getRestaurantIDBaseOnCityId(currentCity[0])
         targetRestaurantId = filteredRestaurantId[random.randint(0, len(filteredRestaurantId) - 1)]
         currentOrderCount = Mongo_Operator.getRestaurantOrderCount(targetRestaurantId)
+        order = np.array([])
         Mongo_Operator.insertOrder({
             'order_approved_at': None,
             'order_delivered_customer_date': None,
             'order_restaurant_carrier_date': None,
-            'driver_id': None,
+            'driver_id': 0,
             'order_estimated_delivery_date': None,
             'Longitude': generatedLocation[1],
             'Latitude': generatedLocation[0],

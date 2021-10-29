@@ -186,6 +186,7 @@ class RMDP:
         except Exception as e:
             logging.critical(e, exc_info=True)
 
+
     def deltaSDelay(self, route, Longitude, Latitude):
         try:
             delay: float = 0.0

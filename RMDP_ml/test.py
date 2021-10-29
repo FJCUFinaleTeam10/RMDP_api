@@ -21,7 +21,7 @@ restaurantPrepareTime = timedelta(minutes=20)
 deadlineTime = timedelta(minutes=40)
 p = math.pi / 180
 
-
+'''
 def generateThread():
     cityList = Mongo_Operator.getAllCity()
     start = time.time()
@@ -61,3 +61,7 @@ def sequencePermutation(city):
 
 
 generateThread()
+'''
+restaurantNode = np.array(
+            [1000, , currentParedRestaurent[1], 0, currentParedRestaurent[0],
+             order[4], 2, 0]).reshape(1,8)
