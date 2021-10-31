@@ -117,7 +117,7 @@ def getHasOrderDriverBaseOnCity(cityId):
 
 
 def getPairedOrderBaseOnCity( restaurantListID):
-    return list(self.orderCollection.find({
+    return list(orderCollection.find({
         '$and': [
             {"order_restaurant_carrier_restaurantId": {
                 "$in": restaurantListID,
@@ -148,9 +148,7 @@ def getPairedOrderBaseOnOrderID(restaurantID,orderID):
         rawData['order_restaurant_carrier_restaurantId'],
         rawData['order_status']
     )).T
-
     rawData = np.asarray(rawData)
-
     return rawData
 
 def getRestaurantIDBaseOnCityId(cityId):

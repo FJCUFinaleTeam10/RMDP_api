@@ -11,9 +11,9 @@ DEBUG = False if int(os.environ['DEBUG']) == 1 else True
 
 def mongoClientUrl(DEBUG):
     if DEBUG:
-        return "mongodb://admin:admin@localhost:27017/RMDP?authSource=admin"
+        return os.environ.get("localhostmongoClientUrl")
     else:
-        return "mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin"
+        return os.environ.get("dockermongoClientUrl")
 
 
 connect("RMDP_mongodb", host=mongoClientUrl(DEBUG))
@@ -98,8 +98,15 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 STATIC_URL = '/static/'
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
-CELERY_RESULT_BACKEND = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
+
+CELERY_BROKER_URL = broker = [os.environ.get("CELERY_BROKER_0"),
+                              os.environ.get("CELERY_BROKER_1"),
+                              os.environ.get("CELERY_BROKER_2")]
+
+CELERY_RESULT_BACKEND = [os.environ.get("CELERY_BROKER_0"),
+                         os.environ.get("CELERY_BROKER_1"),
+                         os.environ.get("CELERY_BROKER_2")]
+
 CELERY_BEAT_SCHEDULE = {
     "run_RMDP": {
         "task": "RMDP_ml.tasks.run_RMDP",

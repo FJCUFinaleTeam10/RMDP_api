@@ -8,11 +8,12 @@ import numpy as np
 from RMDP_ml.Math import Geometry
 from RMDP_ml.Database_Operator import Mongo_Operator
 import time
+import tensorflow as tf
 DEBUG = False if int(os.environ['DEBUG']) == 1 else True
 S = 0
 time_buffer = timedelta(minutes=0)
-t_Pmax = timedelta(seconds=40)#postponement_limit_time
-t_ba = 10#maxtime_of_system_get_order_to_finish_order
+t_Pmax = timedelta(seconds=40)  # postponement_limit_time
+t_ba = 10  # maxtime_of_system_get_order_to_finish_order
 capacity = 5
 velocity: float = 50 * 0.2777777777777778
 restaurantPrepareTime = timedelta(minutes=20)
@@ -21,7 +22,7 @@ p = math.pi / 180
 
 
 def generateThread():
-    cityList = Mongo_Operator.getAllCity()
+    cityList = tf.Variable( Mongo_Operator.getAllCity(), name="scalar")
     np.apply_along_axis(sequencePermutation, axis=1, arr=cityList)
 
 
@@ -35,7 +36,6 @@ def sequencePermutation(city):
         eta = 0.95
         k = 1
         # RMDP setting
-        pairdOrder = np.zeros(shape=(0,13))
         # simulated annealing
         t = initT
         counter = 0
@@ -51,21 +51,25 @@ def sequencePermutation(city):
         finishedOrder = Mongo_Operator.getOrderBaseOnCity(filterrestTaurantCode, 4)
         q_setting = Mongo_Operator.getQlearning(city[0])
         route = driverHashTable(driverList)
-        if len(finishedOrder)!=0:
+        if len(finishedOrder) != 0:
             nonUpdateOrder = np.vstack((order for order in finishedOrder if order[7] == 0))
             updateRealReward(nonUpdateOrder, restaurantList, q_setting)
         if len(unAssignOrder) == 0 and len(postponedOrder) > 0:
             skipPostponement = True
             unAssignOrder = postponedOrder.copy()
-            postponedOrder = np.zeros(shape=(0,13))
+            postponedOrder = np.zeros(shape=(0, 13))
         if maxLengthPost <= len(unAssignOrder):
             maxLengthPost = len(unAssignOrder) + 1
         # print(len(unAssignOrder))
         old_sequence = unAssignOrder.copy()
-        delay_old, dr_list, post_list, paird_list, q_list ,update_route,insert_route= runRMDP(city, old_sequence,
-                                                                    postponedOrder, driverList, restaurantList,
-                                                                    pairdOrder, skipPostponement,
-                                                                    maxLengthPost, q_setting,route)
+        delay_old, dr_list, post_list, paird_list, q_list, update_route, insert_route = runRMDP(city, old_sequence,
+                                                                                                postponedOrder,
+                                                                                                driverList,
+                                                                                                restaurantList,
+                                                                                                pairdOrder,
+                                                                                                skipPostponement,
+                                                                                                maxLengthPost,
+                                                                                                q_setting, route)
         start = time.time()
         # delay = 0
         while t > minT and len(old_sequence) > 1:
@@ -75,7 +79,7 @@ def sequencePermutation(city):
                 new_sequence = copy.deepcopy(old_sequence)
                 new_sequence[position_switch1], new_sequence[position_switch2] = new_sequence[position_switch2], \
                                                                                  new_sequence[position_switch1]
-                delay_new, driverList_new, postponedOrder_new, pairdorder_new, q_setting_new,update_route_new ,insert_route_new= runRMDP(
+                delay_new, driverList_new, postponedOrder_new, pairdorder_new, q_setting_new, update_route_new, insert_route_new = runRMDP(
                     city,
                     old_sequence,
                     postponedOrder,
@@ -117,61 +121,56 @@ def sequencePermutation(city):
         logging.critical(e, exc_info=True)
 
 
-def runRMDP(cityName, unAssignOrder, postponedOrder, driverList, restaurantList, pairdOrder, skipPostponement,
-            maxLengthPost, q_setting,route):
+def runRMDP(cityName, unAssignOrder, postponedOrder, driverList, restaurantList, pairdOrder, skipPostponement,maxLengthPost, q_setting, route):
     try:
         currentDriverList = driverList.copy()
         P_hat = postponedOrder.copy()  # waitting order
         currentPairdOrder = pairdOrder.copy()
         currentQ_setting = q_setting.copy()
         currentDriverRoute = route.copy()
-        allupdateroute = np.zeros(shape = (0,8))
-        allinsertroute = np.zeros(shape = (0,8))
-        delays =0
-        ls = np.zeros(shape = (1,0))
+        allupdateroute = np.zeros(shape=(0, 8))
+        allinsertroute = np.zeros(shape=(0, 8))
+        delays = 0
+        ls = np.zeros(shape=(1, 0))
         for D in unAssignOrder:
-            currentPairdRestaurent = next(  restaurant for restaurant in restaurantList if restaurant[0] == D[11])
+            currentPairdRestaurent = next(restaurant for restaurant in restaurantList if restaurant[0] == D[11])
             if skipPostponement:
                 currentPairdDriverId, currentQ_setting, D = Qing(D, currentPairdRestaurent, currentDriverList,
                                                                  cityName,
                                                                  currentQ_setting)
                 D[0] = currentDriverList[currentPairdDriverId][0]
                 currentDriverList[currentPairdDriverId][6] += 1
-                currentDriverRoute ,insertDriverRoute= copy.deepcopy(
-                    AssignOrder(D, currentDriverList[currentPairdDriverId], currentPairdRestaurent,currentDriverRoute))
-                #delays = deltaSDelay(currentDriverRoute[D[0]], currentDriverList[currentPairdDriverId][4], currentDriverList[currentPairdDriverId][3])+delays
-                #allinsertroute = np.concatenate((allinsertroute, insertDriverRoute), axis=0)#all need insert route
-                currentPairdOrder = np.concatenate((currentPairdOrder,D),axis=0)
+                currentDriverRoute, insertDriverRoute = copy.deepcopy(AssignOrder(D, currentDriverList[currentPairdDriverId], currentPairdRestaurent, currentDriverRoute))
+                # delays = deltaSDelay(currentDriverRoute[D[0]], currentDriverList[currentPairdDriverId][4], currentDriverList[currentPairdDriverId][3])+delays
+                # allinsertroute = np.concatenate((allinsertroute, insertDriverRoute), axis=0)#all need insert route
+                currentPairdOrder = np.concatenate((currentPairdOrder, D), axis=0)
 
             elif Postponement(P_hat, D, maxLengthPost):
-                D = D.reshape(1,13)
+                D = D.reshape(1, 13)
                 P_hat = np.concatenate((P_hat, D), axis=0)
             else:
 
                 while D[9] - P_hat[0][9] >= t_Pmax and len(P_hat) > 0:
-                    PairedRestaurent = copy.deepcopy(next(restaurant for restaurant in restaurantList if
-                                                          restaurant[0] == P_hat[0][11]
-                                                          ))
-                    PairdDriverId, currentQ_setting, D = Qing(D, PairedRestaurent, currentDriverList, cityName,
-                                                              currentQ_setting)
+                    PairedRestaurent = copy.deepcopy(next(restaurant for restaurant in restaurantList if restaurant[0] == P_hat[0][11]))
+                    PairdDriverId, currentQ_setting, D = Qing(D, PairedRestaurent, currentDriverList, cityName,currentQ_setting)
                     P_hat[0][0] = currentDriverList[PairdDriverId][0]
                     currentDriverList[PairdDriverId][6] += 1
-                    currentDriverRoute ,insertDriverRoute= copy.deepcopy(
-                        AssignOrder(P_hat[0], currentDriverList[PairdDriverId], PairdRestaurent, currentDriverRoute))
+                    currentDriverRoute, insertDriverRoute = copy.deepcopy(
+                        AssignOrder(P_hat[0], currentDriverList[PairdDriverId], PairedRestaurent, currentDriverRoute))
 
-                    #allinsertroute = np.concatenate((allinsertroute,insertDriverRoute),axis = 0)
+                    # allinsertroute = np.concatenate((allinsertroute,insertDriverRoute),axis = 0)
                     currentPairdOrder = np.concatenate((currentPairdOrder, P_hat[0]), axis=0)
-                    P_hat = np.delete(P_hat, 0,axis =0)
+                    P_hat = np.delete(P_hat, 0, axis=0)
                 if len(P_hat) >= maxLengthPost:
                     for order in P_hat:
                         PairedRestaurent = copy.deepcopy(next(
                             restaurant for restaurant in restaurantList if int(restaurant[0]) == int(order[11])))
                         PairdDriverId, currentQ_setting, order = Qing(order, PairedRestaurent, currentDriverList,
-                                                                  cityName, currentQ_setting)
+                                                                      cityName, currentQ_setting)
                         currentDriverList[PairdDriverId][6] += 1
                         order[0] = currentDriverList[PairdDriverId][0]
-                        #currentDriverRoute = Mongo_Operator.getDriverRouteBaseOnDriverID(int(order[0]))
-                        currentDriverRoute ,insertDriverRoute= copy.deepcopy(
+                        # currentDriverRoute = Mongo_Operator.getDriverRouteBaseOnDriverID(int(order[0]))
+                        currentDriverRoute, insertDriverRoute = copy.deepcopy(
                             AssignOrder(order, currentDriverList[PairdDriverId], currentPairdRestaurent,
                                         currentDriverRoute))
                         all = np.concatenate((insertDriverRoute, currentDriverRoute), axis=0)
@@ -179,15 +178,15 @@ def runRMDP(cityName, unAssignOrder, postponedOrder, driverList, restaurantList,
                                              currentDriverList[PairdDriverId][3]) + delays
                         ls = np.append(ls, currentDriverList[PairdDriverId][0])
                         currentPairdOrder = np.concatenate((currentPairdOrder, order), axis=0)
-                        allupdateroute = np.concatenate((allupdateroute, currentDriverRoute), axis=0)  # combine all route
+                        allupdateroute = np.concatenate((allupdateroute, currentDriverRoute),
+                                                        axis=0)  # combine all route
                         allinsertroute = np.concatenate((allinsertroute, insertDriverRoute), axis=0)
-                    P_hat = np.zeros(shape=(0,13))
+                    P_hat = np.zeros(shape=(0, 13))
                 P_hat = np.concatenate((P_hat, D), axis=0)
-        return TotalDelay(currentDriverList,ls,delays), currentDriverList, P_hat, currentPairdOrder, currentQ_setting,allupdateroute,allinsertroute
+        return TotalDelay(currentDriverList, ls,
+                          delays), currentDriverList, P_hat, currentPairdOrder, currentQ_setting, allupdateroute, allinsertroute
     except Exception as e:
         logging.critical(e, exc_info=True)
-
-
 
 
 def deltaSDelay(route, Latitude, Longitude):
@@ -197,7 +196,7 @@ def deltaSDelay(route, Latitude, Longitude):
         currentRoute = copy.deepcopy(route)
         currentRoute = currentRoute[currentRoute[:, 6].argsort()]
         currentDriverLocation = np.array([0, Latitude, Longitude, 2, 0, 0, 0, 0])
-        currentRoute = np.insert(currentRoute,0,currentDriverLocation,axis = 0)
+        currentRoute = np.insert(currentRoute, 0, currentDriverLocation, axis=0)
         for i in range(1, len(currentRoute), 1):
             previousNode = currentRoute[i - 1]
             currentNode = currentRoute[i]
@@ -205,8 +204,8 @@ def deltaSDelay(route, Latitude, Longitude):
                                                     float(previousNode[2]),
                                                     float(currentNode[1]), float(currentNode[2]))
             tripTime += currentDistance / velocity
-            if  currentNode[3]==1:
-                order = Mongo_Operator.getPairedOrderBaseOnOrderID(currentNode[4],currentNode[5])
+            if currentNode[3] == 1:
+                order = Mongo_Operator.getPairedOrderBaseOnOrderID(currentNode[4], currentNode[5])
                 timeComplete = timedelta(seconds=tripTime) + time_buffer + datetime.now() + timedelta(hours=8)
                 timeDeadline = order[9] + deadlineTime
                 timeDelay = timeComplete - timeDeadline
@@ -215,49 +214,40 @@ def deltaSDelay(route, Latitude, Longitude):
     except Exception as e:
         logging.critical(e, exc_info=True)
 
+
 def driverHashTable(driverlist):
     driverRoute = {}
     for driver in driverlist:
         getRoute = Mongo_Operator.getDriverRouteBaseOnDriverID(driver[0])
-        driverRoute.setdefault(driver[0],getRoute)
+        driverRoute.setdefault(driver[0], getRoute)
     return driverRoute
 
 
-
-
-
-
-
-
-
-
-
-
-
-def AssignOrder( order, pairedDriver, currentParedRestaurent,currentDriverRoute):
+def AssignOrder(order, pairedDriver, currentParedRestaurent, currentDriverRoute):
     try:
         restaurantNode = np.array(
             [pairedDriver[0], currentParedRestaurent[2], currentParedRestaurent[1], 0, currentParedRestaurent[0],
-             order[4], 1, 0]).reshape(1,8)
-        orderNode = np.array([pairedDriver[0], order[2], order[3], 1, currentParedRestaurent[0], order[4], 2, 0]).reshape(1,8)
-        if len(currentDriverRoute[order[0]])==0:
-            insertDriverRoute = np.concatenate((currentDriverRoute[order[0]],restaurantNode[0],orderNode[0]),axis =0)
+             order[4], 1, 0]).reshape(1, 8)
+        orderNode = np.array(
+            [pairedDriver[0], order[2], order[3], 1, currentParedRestaurent[0], order[4], 2, 0]).reshape(1, 8)
+        if len(currentDriverRoute[order[0]]) == 0:
+            insertDriverRoute = np.concatenate((currentDriverRoute[order[0]], restaurantNode[0], orderNode[0]), axis=0)
             currentDriverRoute[order[0]] = insertDriverRoute
         else:
             allnode = currentDriverRoute[order[0]]
             allnode = allnode[allnode[:, 6].argsort()]
             first = 0
             second = 1
-            answerRoute=0
+            answerRoute = 0
             minDelayTime = float('inf')
-            for i in range(0, len(allnode), 1):# start 0 or 1 , we can't change 0 when delivered
+            for i in range(0, len(allnode), 1):  # start 0 or 1 , we can't change 0 when delivered
                 for j in range(i + 1, len(allnode) + 2, 1):
                     tmpRoute = copy.deepcopy(allnode)
 
-                    tmpRoute = np.insert(tmpRoute,i,restaurantNode[0],axis =0)
-                    tmpRoute = np.insert(tmpRoute,j, orderNode[0],axis =0)
-                    for i in range(1,len(tmpRoute)+1):
-                        tmpRoute[i-1][6] = i
+                    tmpRoute = np.insert(tmpRoute, i, restaurantNode[0], axis=0)
+                    tmpRoute = np.insert(tmpRoute, j, orderNode[0], axis=0)
+                    for i in range(1, len(tmpRoute) + 1):
+                        tmpRoute[i - 1][6] = i
                     delayTime = deltaSDelay(tmpRoute, tmpDriver[4], tmpDriver[3])
                     if minDelayTime > delayTime:
                         minDelayTime = delayTime
@@ -267,9 +257,9 @@ def AssignOrder( order, pairedDriver, currentParedRestaurent,currentDriverRoute)
 
             restaurantNode[0][6] = first
             orderNode[0][6] = second
-            insertDriverRoute = np.concatenate(( restaurantNode[0], orderNode[0]), axis=0)
+            insertDriverRoute = np.concatenate((restaurantNode[0], orderNode[0]), axis=0)
             currentDriverRoute[order[0]] = answerRoute
-        return currentDriverRoute,insertDriverRoute #dict, nparray
+        return currentDriverRoute, insertDriverRoute  # dict, nparray
     except Exception as e:
         logging.critical(e, exc_info=True)
 
@@ -303,23 +293,18 @@ def FindVehicle(Order, OrderRestaurant, driverList):
         logging.critical(e, exc_info=True)
 
 
-
-
-
-
-
-
 def slackDelay(self, route, Longitude, Latitude):
     try:
         delay: int = 0
         tripTime: int = 0
         currentRoute: list = copy.deepcopy(route)
-        currentDriverLocation = np.array([0,Latitude,Longitude,2,0,0,0,0])
+        currentDriverLocation = np.array([0, Latitude, Longitude, 2, 0, 0, 0, 0])
         currentRoute.insert(0, {"Longitude": Longitude, "Latitude": Latitude, 'nodeType': 2})
         for i in range(1, len(currentRoute), 1):
             currentDistance = Geometry.coorDistance(float(currentRoute[i - 1]['Latitude']),
                                                     float(currentRoute[i - 1]['Longitude']),
-                                                    float(currentRoute[i]['Latitude']), float(currentRoute[i]['Longitude']))
+                                                    float(currentRoute[i]['Latitude']),
+                                                    float(currentRoute[i]['Longitude']))
             tripTime += currentDistance / self.velocity
             if 'restaurantId' in currentRoute[i]:
                 deadLine = currentRoute[i]['deadLineTime'] - datetime.now() + timedelta(hours=8)
@@ -329,18 +314,20 @@ def slackDelay(self, route, Longitude, Latitude):
     except Exception as e:
         logging.critical(e, exc_info=True)
 
-def TotalDelay(driverList,ls,delays):
+
+def TotalDelay(driverList, ls, delays):
     try:
         for driver in driverList:
             if driver[0] in ls:
                 continue
             else:
                 currentDriverRoute = Mongo_Operator.getDriverRouteBaseOnDriverID(int(driver[0]))
-                if len(currentDriverRoute)>0:
-                    delays = deltaSDelay(currentDriverRoute,driver[4],driver[3])+delays
+                if len(currentDriverRoute) > 0:
+                    delays = deltaSDelay(currentDriverRoute, driver[4], driver[3]) + delays
         return delays
     except Exception as e:
         logging.critical(e, exc_info=True)
+
 
 def Postponement(P_hat, D, maxLengthPost):
     return True if len(P_hat) < maxLengthPost or D[9] - P_hat[0][9] < t_Pmax else False
@@ -348,11 +335,12 @@ def Postponement(P_hat, D, maxLengthPost):
 
 def updateDriver(driverList):
     try:
-        for driver in list(filter(lambda driver: driver[6] > 0, driverList)):#capacity
+        for driver in list(filter(lambda driver: driver[6] > 0, driverList)):  # capacity
             driver[5] = velocity
             Mongo_Operator.updateDriver(driver)
     except Exception as e:
         logging.critical(e, exc_info=True)
+
 
 def updatePosponedOrder(pospondList):
     try:
@@ -362,27 +350,34 @@ def updatePosponedOrder(pospondList):
     except Exception as e:
         logging.critical(e, exc_info=True)
 
+
 def updatePairdOrder(pairedOrderList):
     try:
         for order in pairedOrderList:
             order[12] = 2
             order[1] = datetime.now()
-            order[8] = (datetime.now() + self.deadlineTime).strftime("%d-%m-%Y %H:%M:%S")
+            order[8] = (datetime.now() + deadlineTime).strftime("%d-%m-%Y %H:%M:%S")
             Mongo_Operator.updateOrder(order)
     except Exception as e:
         logging.critical(e, exc_info=True)
+
+
 def updateRoute(Route):
     try:
         for route in Route:
-            Mongo_Operator.updateRoute(route)#insert route? update route?
+            Mongo_Operator.updateRoute(route)  # insert route? update route?
     except Exception as e:
         logging.critical(e, exc_info=True)
+
+
 def insertRoute(Route):
     try:
         for route in Route:
             Mongo_Operator.insertRoute(route)
     except Exception as e:
         logging.critical(e, exc_info=True)
+
+
 def Qing(Ds_0, restaurant, drlist, city, q_setting):
     try:
         low_capacity = min(driver[6] for driver in drlist)
@@ -390,11 +385,11 @@ def Qing(Ds_0, restaurant, drlist, city, q_setting):
             filteredDriver = list(filter(lambda driver: driver[6] == low_capacity, drlist))
             for v in filteredDriver:
                 Route = Mongo_Operator.getDriverRouteBaseOnDriverID(int(v[0]))
-                delay=0
-                if len(Route)>0:
-                    delay = deltaSDelay(Route, v[4], v[3])#v['Route'], v['Longitude'], v['Latitude']
+                delay = 0
+                if len(Route) > 0:
+                    delay = deltaSDelay(Route, v[4], v[3])  # v['Route'], v['Longitude'], v['Latitude']
                 dist = Geometry.coorDistance(v[4], v[3], float(restaurant[2]),
-                                                  float(restaurant[1]))
+                                             float(restaurant[1]))
                 filteredDriver = sorted(filteredDriver, key=lambda driver: (delay, dist))
                 agents = filteredDriver[:] if len(filteredDriver) < 5 else filteredDriver[0:5]
                 selectedAgent = next((agent for agent in agents if computeAction(agent, city, q_setting) == 1),
@@ -420,9 +415,6 @@ def Qing(Ds_0, restaurant, drlist, city, q_setting):
                 action_0 = q_setting[0][3][new_state][0]
                 action_1 = q_setting[0][3][new_state][1]
 
-
-
-
                 if action_0 > action_1:
                     max = action_0
                 elif action_0 < action_1:
@@ -430,9 +422,9 @@ def Qing(Ds_0, restaurant, drlist, city, q_setting):
                 else:
                     max = action_0 if random.randint(0, 1) else action_1
                 q_setting[0][3][state][action] = q_setting[0][3][state][action] \
-                                                      + q_setting[0][6] * (
-                                                              reward + q_setting[0][7] * max -
-                                                              q_setting[0][3][state][action])
+                                                 + q_setting[0][6] * (
+                                                         reward + q_setting[0][7] * max -
+                                                         q_setting[0][3][state][action])
 
                 # reward = resturant&delivery distance / finish time
                 q_setting[0][13] += 1
@@ -445,6 +437,7 @@ def Qing(Ds_0, restaurant, drlist, city, q_setting):
     except Exception as e:
         logging.critical(e, exc_info=True)
 
+
 def real_reward(order, reward, q_setting):
     try:
         q_setting[0][3][order[5]][1] = reward
@@ -453,6 +446,7 @@ def real_reward(order, reward, q_setting):
         Mongo_Operator.updateQlearning(q_setting)
     except Exception as e:
         logging.critical(e, exc_info=True)
+
 
 def updateRealReward(finishOrder, restaurantList, q_setting):
     try:
@@ -466,6 +460,7 @@ def updateRealReward(finishOrder, restaurantList, q_setting):
     except Exception as e:
         logging.critical(e, exc_info=True)
 
+
 def computeAction(agent, city, q_setting):
     try:
         state = computeState(agent, city)
@@ -477,13 +472,14 @@ def computeAction(agent, city, q_setting):
     except Exception as e:
         logging.critical(e, exc_info=True)
 
+
 def computeState(agent, city):
     try:
         state = [int(abs(float(city[2]) - float(city[4]) - float(agent[4])) / (
                 float(city[3]) * 2 / 50)),
                  int(abs(float(city[3]) - float(city[4]) - float(agent[3])) / (
                          float(city[3]) * 2 / 50))]
-        state =  state[0]*50+state[1]
+        state = state[0] * 50 + state[1]
         if state < 0:
             return 0
         elif state > 2499:
@@ -492,5 +488,6 @@ def computeState(agent, city):
             return state
     except Exception as e:
         logging.critical(e, exc_info=True)
+
 
 generateThread()
