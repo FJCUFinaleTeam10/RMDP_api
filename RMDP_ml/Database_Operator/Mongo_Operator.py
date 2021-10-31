@@ -104,7 +104,7 @@ def getDriverBaseOnCity(cityId):
 
 
 def getHasOrderDriverBaseOnCity(cityId):
-    rawData = driverCollection.find_numpy_all(
+    rawData = driverCollection.aggregate_numpy_all(
         [{'$match': {"City_id": int(cityId),
                      "Capacity": {"$gt": 0}
                      }}], schema=driverPandasSchema)
@@ -132,7 +132,8 @@ def getPairedOrderBaseOnCity( restaurantListID):
 
 
 def getPairedOrderBaseOnOrderID(restaurantID,orderID):
-    rawData =  orderCollection.find_numpy_all({'order_restaurant_carrier_restaurantId': int(restaurantID),'Order_ID':int(orderID)}, schema = orderSchema)
+    rawData =  orderCollection.aggregate_numpy_all([{'$match': {"order_restaurant_carrier_restaurantId": int(restaurantID),
+                                                                    "Order_ID": int(orderID)}}], schema=orderSchema)
     rawData = np.asmatrix((
         rawData['driver_id'],
         rawData['order_approved_at'],
@@ -192,7 +193,6 @@ def getOrderBaseOnCity(filterrestTaurantCode, orderStatus):
                                                                     "order_restaurant_carrier_restaurantId": {
                                                                         "$in": filterrestTaurantCode}
                                                                     }}], schema=orderSchema)
-
     rawData = np.asmatrix((
         rawData['driver_id'],
         rawData['order_approved_at'],
@@ -212,6 +212,8 @@ def getOrderBaseOnCity(filterrestTaurantCode, orderStatus):
     rawData = np.asarray(rawData)
     return rawData
 
+
+
 def updateRoute(Route):
     RouteCollection.update_one(
         {
@@ -221,8 +223,14 @@ def updateRoute(Route):
             'nodetype':Route[3]
         },{
             "$set":{
-                'Node_ID':Route[6],
-                'delivered':Route[7]
+                'Driver_ID': Route[0]
+                , 'Latitude': Route[1]
+                , 'Longitude': Route[2]
+                , 'nodetype': Route[3]
+                , 'Restaurant_ID': Route[4],
+                'Order_ID': Route[5],
+                'Node_ID': Route[6]
+                , 'delivered': Route[7]
             }
         }, upsert=True
     )
@@ -307,20 +315,7 @@ def insertOrder(order):
     except PyMongoError as py_mongo_error:
         logging.critical(py_mongo_error, exc_info=True)
 
-def insertRoute(route):
-    try:
-        orderCollection.insert(
-            {
-                'Driver_ID': route[0],
-                'Latitude': route[1],
-                'Longitude': route[2],
-                'nodetype': route[3],
-                'Restaurant_ID': route[4],
-                'Order_ID': route[5],
-                'Node_ID': route[6],
-                'delivered': route[7]
-            }
-        )
+
     except PyMongoError as py_mongo_error:
         logging.critical(py_mongo_error, exc_info=True)
 def getQlearning(cityName):

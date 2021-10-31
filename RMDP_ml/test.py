@@ -62,6 +62,15 @@ def sequencePermutation(city):
 
 generateThread()
 '''
-restaurantNode = np.array(
-            [1000, , currentParedRestaurent[1], 0, currentParedRestaurent[0],
-             order[4], 2, 0]).reshape(1,8)
+
+
+
+
+def Postponement(P_hat, D, maxLengthPost):
+    if len(P_hat)==0:
+        return True
+    return True if len(P_hat) < maxLengthPost and D[9] - P_hat[0][9] < t_Pmax else False
+P = []
+D = []
+max = 20
+print(Postponement(P,D,max))

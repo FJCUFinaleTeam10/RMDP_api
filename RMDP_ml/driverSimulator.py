@@ -28,7 +28,7 @@ def updateDriverLocation(city):
         driverList = Mongo_Operator.getHasOrderDriverBaseOnCity(city[0])
         for currentDriver in list(driver for driver in driverList if len(Mongo_Operator.getDriverRouteBaseOnDriverID(driver[0])) > 0):  # get driver route > 0 in list
             driverRoute = Mongo_Operator.getDriverRouteBaseOnDriverID(currentDriver[0])
-            targetDestination = next(node for node in driverRoute if node[6]==1)
+            targetDestination = next(node for node in driverRoute if node[6] == 1)
             # distance between target distance and current driver
             DistanceRemain = Geometry.coorDistance(currentDriver[4],
                                                    currentDriver[3],
@@ -81,3 +81,4 @@ def updateDriverLocation(city):
                 Mongo_Operator.updateRoute(route)
     except Exception as e:
         logging.critical(e, exc_info=True)
+generateThread()
