@@ -5,15 +5,12 @@ import os
 from RMDP_ml import tasks
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = 'm&66a4$(n1m+a*&u^!5#^y^^kw=1azxu@fra10ps63evf6c#n='
+SECRET_KEY = os.environ.get("SECRET_KEY")
 DEBUG = False if int(os.environ['DEBUG']) == 1 else True
 
 
 def mongoClientUrl(DEBUG):
-    if DEBUG:
-        return "mongodb://admin:admin@localhost:27017/RMDP?authSource=admin"
-    else:
-        return "mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin"
+    return os.environ.get("localhostmongoClientUrl") if DEBUG else os.environ.get("dockermongoClientUrl")
 
 
 connect("RMDP_mongodb", host=mongoClientUrl(DEBUG))
@@ -101,6 +98,13 @@ USE_TZ = True
 STATIC_URL = '/static/'
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
+
+broker_url = [
+    os.environ.get("CELERY_BROKER_0"),
+    os.environ.get("CELERY_BROKER_1"),
+    os.environ.get("CELERY_BROKER_2"),
+]
+
 CELERY_BEAT_SCHEDULE = {
     "run_RMDP": {
         "task": "RMDP_ml.tasks.run_RMDP",
