@@ -45,3 +45,4 @@ gunicorn==19.9.0
 numpy
 shapely
 numba
+celery-redbeat

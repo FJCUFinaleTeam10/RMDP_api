@@ -99,23 +99,20 @@ STATIC_URL = '/static/'
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
 
-broker_url = [
-    os.environ.get("CELERY_BROKER_0"),
-    os.environ.get("CELERY_BROKER_1"),
-    os.environ.get("CELERY_BROKER_2"),
-]
-
 CELERY_BEAT_SCHEDULE = {
     "run_RMDP": {
         "task": "RMDP_ml.tasks.run_RMDP",
         "schedule": timedelta(seconds=15),
+        'queue': os.environ.get('CELERY_BROKER_1'),
     },
     "generatingOrder": {
         "task": "RMDP_ml.tasks.generatingOrder",
         "schedule": timedelta(seconds=15),
+        'queue': os.environ.get('CELERY_BROKER_3'),
     },
     "driverSimulator": {
         "task": "RMDP_ml.tasks.updateDriver",
         "schedule": timedelta(seconds=1),
+        'queue': os.environ.get('CELERY_BROKER_2'),
     },
 }
