@@ -19,11 +19,9 @@ class Mongo_Operate:
         self.orderCollection = self.databaseName["order"]
         self.qlearningCollection = self.databaseName["q_learning"]
 
-    def getMongoClientUrl(self, DEBUG):
-        if DEBUG:
-            return "mongodb://admin:admin@localhost:27017/RMDP?authSource=admin"
-        else:
-            return "mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin"
+    def mongoClientUrl(self, DEBUG):
+        # return os.environ.get("localhostmongoClientUrl") if DEBUG else os.environ.get("dockermongoClientUrl")
+        return os.environ.get("remotemongoClientUrl") if DEBUG else os.environ.get("dockermongoClientUrl")
 
     def getAllCity(self):
         return list(self.all_citiesCollection.find())
@@ -59,7 +57,7 @@ class Mongo_Operate:
 
     def getPairedOrderBaseOnOrderID(self, orderID):
         return list(self.orderCollection.find({
-                "Order_ID": str(orderID)
+            "Order_ID": str(orderID)
 
         }))
 
@@ -181,7 +179,7 @@ class Mongo_Operate:
                 '_id': q_setting['_id']
             }, {
                 '$set': {
-                    'City':q_setting['City'],
+                    'City': q_setting['City'],
                     'state_index': q_setting['state_index'],
                     'action_index': q_setting['action_index'],
                     'q_table': q_setting['q_table'],

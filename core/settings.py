@@ -11,7 +11,8 @@ DEBUG = False if int(os.environ['DEBUG']) == 1 else True
 
 
 def mongoClientUrl(DEBUG):
-    return os.environ.get("localhostmongoClientUrl") if DEBUG else os.environ.get("dockermongoClientUrl")
+    # return os.environ.get("localhostmongoClientUrl") if DEBUG else os.environ.get("dockermongoClientUrl")
+    return os.environ.get("remotemongoClientUrl") if DEBUG else os.environ.get("dockermongoClientUrl")
 
 
 connect("RMDP_mongodb", host=mongoClientUrl(DEBUG))
