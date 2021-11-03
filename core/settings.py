@@ -3,6 +3,7 @@ from pathlib import Path
 from mongoengine import connect
 import os
 from RMDP_ml import tasks
+from kombu import Queue
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY")
@@ -96,23 +97,35 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 STATIC_URL = '/static/'
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
-CELERY_RESULT_BACKEND = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_BROKER")
+
+CELERY_TASK_ROUTES = {
+    'RMDP_ml.tasks.run_RMDP': {
+        'queue': os.environ.get('CELERY_BROKER_0')
+    },
+    'order.tasks.*': {
+        'queue': os.environ.get('CELERY_BROKER_1')
+    },
+    'RMDP_ml.tasks.*': {
+        'queue': os.environ.get('CELERY_BROKER_2')
+    },
+}
 
 CELERY_BEAT_SCHEDULE = {
     "run_RMDP": {
         "task": "RMDP_ml.tasks.run_RMDP",
         "schedule": timedelta(seconds=15),
-        'queue': os.environ.get('CELERY_BROKER_1'),
+        'options': {'queue': os.environ.get('CELERY_BROKER_0')}
     },
     "generatingOrder": {
-        "task": "RMDP_ml.tasks.generatingOrder",
+        "task": "order.tasks.generatingOrder",
         "schedule": timedelta(seconds=15),
-        'queue': os.environ.get('CELERY_BROKER_3'),
+        'options': {'queue': os.environ.get('CELERY_BROKER_1')}
     },
     "driverSimulator": {
-        "task": "RMDP_ml.tasks.updateDriver",
+        "task": "driver.tasks.updateDriver",
         "schedule": timedelta(seconds=1),
-        'queue': os.environ.get('CELERY_BROKER_2'),
+        'options': {'queue': os.environ.get('CELERY_BROKER_2')}
     },
 }

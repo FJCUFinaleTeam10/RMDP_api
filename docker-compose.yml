@@ -34,13 +34,8 @@ services:
     image: mongo-express
     links:
       - mongodb
-    environment:
-      ME_CONFIG_MONGODB_SERVER: mongodb
-      ME_CONFIG_BASICAUTH_USERNAME: mongoadmin
-      ME_CONFIG_BASICAUTH_PASSWORD: mypass
-      ME_CONFIG_MONGODB_PORT: 27017
-      ME_CONFIG_MONGODB_ADMINUSERNAME: mongoadmin
-      ME_CONFIG_MONGODB_ADMINPASSWORD: mypass
+    env_file:
+      - .env
     ports:
       - '8081:8081'
     networks:
@@ -63,14 +58,35 @@ services:
       - './conf/redis/redis.conf:/tmp/redis.conf'
     networks:
       - rmdp_api
-  celery:
+  driver_worker:
     build: .
-    command: celery -A core worker -l info -c 1
+    command: celery -A driver worker -l info -c 1
     volumes:
       - .:/usr/src/app/
     depends_on:
       - redis
-      - mongodb
+    env_file:
+      - .env
+    networks:
+      - rmdp_api
+  order_worker:
+    build: .
+    command: celery -A order worker -l info -c 1
+    volumes:
+      - .:/usr/src/app/
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    networks:
+      - rmdp_api
+  rmdp_worker:
+    build: .
+    command: celery -A RMDP_ml worker -l info -c 1
+    volumes:
+      - .:/usr/src/app/
+    depends_on:
+      - redis
     env_file:
       - .env
     networks:
