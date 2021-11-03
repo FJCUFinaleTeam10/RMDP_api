@@ -1,0 +1,57 @@
+version: '3.7'
+services:
+  redis:
+    container_name: redis
+    image: 'redis:latest'
+    command:
+      - redis-server
+      - '--bind'
+      - redis
+      - '--port'
+      - '6379'
+    ports:
+      - '6379:6379'
+    volumes:
+      - './conf/redis/redis.conf:/tmp/redis.conf'
+    networks:
+      - rmdp_api
+  order_worker:
+    build: docker_compose
+    command: celery -A order worker -l info -c 1
+    volumes:
+      - .:/usr/src/app/
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    networks:
+      - rmdp_api
+  order_beat:
+    build: docker_compose
+    command: celery -A order beat -l info
+    volumes:
+      - .:/usr/src/app/
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    networks:
+      - rmdp_api
+  flower:
+    image: mher/flower:0.9.5
+    command: ['flower', '--broker=redis://redis:6379/0', '--port=5555']
+    expose:
+      - 5555
+    ports:
+      - '5555:5555'
+    depends_on:
+      - redis
+    networks:
+      - rmdp_api
+    restart: always
+networks:
+  rmdp_api:
+    driver: bridge
+volumes:
+  mongodb-volume: null
+  redisdata: null

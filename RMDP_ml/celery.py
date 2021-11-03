@@ -3,13 +3,15 @@ from datetime import timedelta
 from celery import Celery
 from RMDP_ml.tasks import run_RMDP
 
-driverCelery = Celery("driver", broker=[os.environ.get("CELERY_BROKER_2")])
-driverCelery.conf.backend = os.environ.get('CELERY_BROKER_2')
-driverCelery.conf.broker_url = os.environ.get('CELERY_BROKER_2')
+modelCelery = Celery("rmdp_ml", broker=[os.environ.get("CELERY_BROKER_2")])
+modelCelery.conf.backend = os.environ.get('CELERY_BROKER_2')
+modelCelery.conf.broker_url = os.environ.get('CELERY_BROKER_2')
 
-driverCelery.conf.beat_schedule = {
-    "driverSimulator": {
+modelCelery.conf.beat_schedule = {
+    "run_RMDP": {
         "task": "RMDP_ml.tasks.run_RMDP",
-        "schedule": timedelta(seconds=1),
+        "schedule": timedelta(seconds=15),
+        # 'options': {'queue': os.environ.get('CELERY_BROKER_0')}
     },
 }
+modelCelery.autodiscover_tasks()

@@ -10,7 +10,7 @@ from RMDP_ml.Math import Geometry
 
 class driverSimulator:
     def __init__(self):
-        self.totalCurrentWorker = 2
+        self.totalCurrentWorker = int(os.environ.get('iterThread'))
         self.DBclient = Mongo_Operate()
         self.updateTime = 1
 

@@ -104,10 +104,10 @@ CELERY_TASK_ROUTES = {
     'RMDP_ml.tasks.run_RMDP': {
         'queue': os.environ.get('CELERY_BROKER_0')
     },
-    'order.tasks.*': {
+    'order.tasks.generatingOrder': {
         'queue': os.environ.get('CELERY_BROKER_1')
     },
-    'RMDP_ml.tasks.*': {
+    'driver.tasks.updateDriver': {
         'queue': os.environ.get('CELERY_BROKER_2')
     },
 }

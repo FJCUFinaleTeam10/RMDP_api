@@ -28,7 +28,7 @@ def interSectionCircleAndLine(center_Latitude: float, center_Longitude: float, R
     return intersection.x, intersection.y
 
 
-@jit(nopython=True)
+# @jit(nopython=True)
 def randomLocation(Longitude, Latitude, Radius):
     try:
         return [random.uniform(float(Latitude), float(Latitude) + float(Radius)),
@@ -37,7 +37,7 @@ def randomLocation(Longitude, Latitude, Radius):
         logging.critical(e, exc_info=True)
 
 
-@jit(nopython=True)
+# @jit(nopython=True)
 def coorDistance(lat1, lon1, lat2, lon2):
     try:
         p = math.pi / 180

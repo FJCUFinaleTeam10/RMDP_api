@@ -1,0 +1,51 @@
+version: '3.7'
+services:
+  django:
+    build: .
+    container_name: django
+    command: 'python manage.py runserver 0.0.0.0:8000'
+    volumes:
+      - '.:/usr/src/app/'
+    ports:
+      - '8000:8000'
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - mongodb
+    networks:
+      - rmdp_api
+  mongodb:
+    image: 'mongo:latest'
+    container_name: mongo-server
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=mongoadmin
+      - MONGO_INITDB_ROOT_PASSWORD=mypass
+    ports:
+      - '27017:27017'
+    volumes:
+      - 'mongodb-volume:/data/db'
+      - './mongo-seed-data:/data/mongo-seed-data'
+      - './mongodb-scripts:/docker-entrypoint-initdb.d'
+    networks:
+      - rmdp_api
+  mongo-express:
+    container_name: mongo-express
+    image: mongo-express
+    links:
+      - mongodb
+    env_file:
+      - .env
+    ports:
+      - '8081:8081'
+    networks:
+      - rmdp_api
+    depends_on:
+      - mongodb
+    restart: always
+networks:
+  rmdp_api:
+    driver: bridge
+volumes:
+  mongodb-volume: null
+  redisdata: null
