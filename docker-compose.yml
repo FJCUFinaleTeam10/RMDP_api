@@ -11,7 +11,6 @@ services:
     env_file:
       - .env
     depends_on:
-      - redis
       - mongodb
     networks:
       - rmdp_api
