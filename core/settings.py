@@ -3,7 +3,6 @@ from pathlib import Path
 from mongoengine import connect
 import os
 from RMDP_ml import tasks
-from kombu import Queue
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY")

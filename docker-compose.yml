@@ -4,12 +4,17 @@ services:
     build: .
     container_name: django
     command: 'python manage.py runserver 0.0.0.0:8000'
+    environment:
+      DJANGO_ALLOWED_HOSTS: 'localhost 127.0.0.1 [::1]'
+      DJANGO_SETTINGS_MODULE: 'core.settings'
+    env_file:
+      - .env
     volumes:
       - '.:/usr/src/app/'
     ports:
       - '8000:8000'
-    env_file:
-      - .env
+#    env_file:
+#      - .env
     depends_on:
       - mongodb
     networks:

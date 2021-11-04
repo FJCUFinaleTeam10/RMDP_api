@@ -3,6 +3,6 @@ from RMDP_ml.driverSimulator import driverSimulator
 
 
 @shared_task
-def generatingOrder():
+def updateDriver():
     currentTask = driverSimulator()
     currentTask.generateThread()

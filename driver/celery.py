@@ -8,7 +8,7 @@ driverCelery.conf.backend = os.environ.get('CELERY_BROKER_0')
 driverCelery.conf.broker_url = os.environ.get('CELERY_BROKER_0')
 driverCelery.conf.beat_schedule = {
     "driverSimulator": {
-        "task": "RMDP_ml.tasks.run_RMDP",
+        "task": "driver.tasks.updateDriver",
         "schedule": timedelta(seconds=15),
         # 'options': {'queue': os.environ.get('CELERY_BROKER_0')}
     },
