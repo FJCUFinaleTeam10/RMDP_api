@@ -131,9 +131,8 @@ def getPairedOrderBaseOnCity( restaurantListID):
     }))
 
 
-def getPairedOrderBaseOnOrderID(restaurantID,orderID):
-    rawData =  orderCollection.aggregate_numpy_all([{'$match': {"order_restaurant_carrier_restaurantId": int(restaurantID),
-                                                                    "Order_ID": int(orderID)}}], schema=orderSchema)
+def getPairedOrderBaseOnOrderID(orderID):
+    rawData =  orderCollection.find_numpy_all({'Order_ID': int(orderID)}, schema=orderSchema)
     rawData = np.asmatrix((
         rawData['driver_id'],
         rawData['order_approved_at'],
@@ -215,22 +214,23 @@ def getOrderBaseOnCity(filterrestTaurantCode, orderStatus):
 
 
 def updateRoute(Route):
+    Route = Route.reshape(1,8)
     RouteCollection.update_one(
         {
-            'Driver_ID':Route[0],
-            'Resrtaurant_ID':Route[4],
-            'Order_ID':Route[5],
-            'nodetype':Route[3]
+            'Driver_ID':Route[0][0],
+            'Resrtaurant_ID':Route[0][4],
+            'Order_ID':Route[0][5],
+            'nodetype':Route[0][3]
         },{
             "$set":{
-                'Driver_ID': Route[0]
-                , 'Latitude': Route[1]
-                , 'Longitude': Route[2]
-                , 'nodetype': Route[3]
-                , 'Restaurant_ID': Route[4],
-                'Order_ID': Route[5],
-                'Node_ID': Route[6]
-                , 'delivered': Route[7]
+                'Driver_ID': Route[0][0]
+                , 'Latitude': Route[0][1]
+                , 'Longitude': Route[0][2]
+                , 'nodetype': Route[0][3]
+                , 'Restaurant_ID': Route[0][4],
+                'Order_ID': Route[0][5],
+                'Node_ID': Route[0][6]
+                , 'delivered': Route[0][7]
             }
         }, upsert=True
     )
@@ -360,3 +360,5 @@ def getRestaurantOrderCount(restaurantId):
     rawData = restaurantCollection.find_numpy_all({'Restaurant_ID': int(restaurantId)}, schema=restaurantSchema)
     return rawData['order_num'][0] #accumulate order or current order
     # return rawData['Restaurant_ID']
+def lengthOforder():
+    return orderCollection.count()

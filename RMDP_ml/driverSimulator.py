@@ -20,52 +20,54 @@ def generateThread():
 
 def updateDriverLocation(city):
     try:
-        #rawData['City_id'] == 0
-        #rawData['Country_Code'] == 1
-        #rawData['Latitude']  == 2
-        #rawData['Longitude']  == 3
-        #rawData['radius']  == 4
+        # rawData['City_id'] == 0
+        # rawData['Country_Code'] == 1
+        # rawData['Latitude']  == 2
+        # rawData['Longitude']  == 3
+        # rawData['radius']  == 4
+
         driverList = Mongo_Operator.getHasOrderDriverBaseOnCity(city[0])
-        for currentDriver in list(driver for driver in driverList if len(Mongo_Operator.getDriverRouteBaseOnDriverID(driver[0])) > 0):  # get driver route > 0 in list
+        for currentDriver in list(driver for driver in driverList if Mongo_Operator.getDriverRouteBaseOnDriverID(driver[0]).size > 0) : # get driver route > 0 in list
+            storageRoute = np.zeros(shape=(0, 8))
             driverRoute = Mongo_Operator.getDriverRouteBaseOnDriverID(currentDriver[0])
-            targetDestination = next(node for node in driverRoute if node[6] == 1)
-            # distance between target distance and current driver
-            DistanceRemain = Geometry.coorDistance(currentDriver[4],
-                                                   currentDriver[3],
-                                                   targetDestination[1],
-                                                   targetDestination[2])
+            if driverRoute.size<1:
+                continue
+            driverRoute = driverRoute[driverRoute[:, 6].argsort()]
+            DistanceRemain = Geometry.coorDistance(currentDriver[4], currentDriver[3], driverRoute[0][1],driverRoute[0][2])
             # the distance of each update time
             DistanceTraveled = (currentDriver[5] * updateTime) / 1000
             # transform distance to degree
             # the driver update distance longer than next destination
             if DistanceTraveled >= DistanceRemain:
-                currentDriver[4] = targetDestination[1]
-                currentDriver[3] = targetDestination[2]
-                deleteindex = np.where(driverRoute==targetDestination)
-                driverRoute = np.delete(driverRoute,deleteindex)
-                currentOrder = next(iter(Mongo_Operator.getPairedOrderBaseOnOrderID(targetDestination[4],targetDestination[5])))
-                if targetDestination[3] == 1:
+                currentDriver[4] = driverRoute[0][1]
+                currentDriver[3] = driverRoute[0][2]
+
+                currentOrder = next(iter(Mongo_Operator.getPairedOrderBaseOnOrderID(driverRoute[0][5])))
+                if driverRoute[0][3] == 1:
                     currentOrder[12] = 4
                     currentDriver[6] -= 1
-                    currentOrder[6] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                    currentOrder[6] = datetime.now()
                 else:
                     currentOrder[12] = 3
-                    currentOrder[10] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                    currentOrder[10] = datetime.now()
                 # self.DBclient.updateOrder(targetDestination)
                 Mongo_Operator.updateOrder(currentOrder)
-                if len(driverRoute) ==0:
+                storageRoute = np.row_stack((storageRoute, driverRoute[0]))
+                driverRoute = np.delete(driverRoute, 0, axis=0)
+
+                if len(driverRoute) == 0:
                     currentDriver[5] = 0
-                targetDestination[7] = 1
-                Mongo_Operator.updateRoute(targetDestination)
-                driverRoute[:][6]-=1
+                storageRoute[0][7] = 1
+                driverRoute[...,6]-=1
+                Mongo_Operator.updateRoute(storageRoute[0])
             else:
                 updatedLat, updatedLon = Geometry.interSectionCircleAndLine(currentDriver[4],
                                                                             currentDriver[3],
                                                                             DistanceTraveled / 1000,
                                                                             currentDriver[4],
                                                                             currentDriver[3],
-                                                                            targetDestination[1],
-                                                                            targetDestination[2])
+                                                                            driverRoute[0][1],
+                                                                            driverRoute[0][2])
 
                 currentDriver[4] = updatedLat
                 currentDriver[3] = updatedLon
@@ -77,8 +79,11 @@ def updateDriverLocation(city):
                                                    targetDestination[2])
             '''
             Mongo_Operator.updateDriver(currentDriver)
+
             for route in driverRoute:
                 Mongo_Operator.updateRoute(route)
     except Exception as e:
         logging.critical(e, exc_info=True)
+
+
 generateThread()
