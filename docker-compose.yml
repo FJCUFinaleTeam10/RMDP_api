@@ -4,9 +4,6 @@ services:
     build: .
     container_name: django
     command: 'python manage.py runserver 0.0.0.0:8000'
-    environment:
-      DJANGO_ALLOWED_HOSTS: 'localhost 127.0.0.1 [::1]'
-      DJANGO_SETTINGS_MODULE: 'core.settings'
     volumes:
       - '.:/usr/src/app/'
     ports:
@@ -14,6 +11,7 @@ services:
     env_file:
       - enviroment.env
     depends_on:
+      - redis
       - mongodb
     networks:
       - rmdp_api
