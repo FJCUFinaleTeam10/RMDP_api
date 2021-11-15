@@ -29,8 +29,8 @@ driverCollection = databaseName["driver"]
 all_citiesCollection = databaseName["all_cities"]
 country_codeCollection = databaseName["country_code"]
 orderCollection = databaseName["order"]
-qlearningCollection = databaseName["Q_learning"]
-RouteCollection = databaseName["Route"]
+qlearningCollection = databaseName["q_learning"]
+RouteCollection = databaseName["route"]
 driverPandasSchema = Schema({
     'Driver_ID': pyarrow.int64(),
     'Country_Code': pyarrow.int64(),

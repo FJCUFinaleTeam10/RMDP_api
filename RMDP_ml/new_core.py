@@ -16,7 +16,7 @@ time_buffer = timedelta(minutes=0)
 t_Pmax = timedelta(seconds=40)  # postponement_limit_time
 t_ba = 10  # maxtime_of_system_get_order_to_finish_order
 capacity = 5
-velocity: float = 500 * 0.2777777777777778
+velocity: float = 1000 * 0.2777777777777778
 restaurantPrepareTime = timedelta(minutes=20)
 deadlineTime = timedelta(minutes=40)
 p = math.pi / 180
