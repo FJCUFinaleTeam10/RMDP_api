@@ -5,15 +5,13 @@ import os
 from RMDP_ml import tasks
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = 'm&66a4$(n1m+a*&u^!5#^y^^kw=1azxu@fra10ps63evf6c#n='
+SECRET_KEY = os.environ.get("SECRET_KEY")
 DEBUG = False if int(os.environ['DEBUG']) == 1 else True
 
 
 def mongoClientUrl(DEBUG):
-    if DEBUG:
-        return os.environ.get("localhostmongoClientUrl")
-    else:
-        return os.environ.get("dockermongoClientUrl")
+    # return os.environ.get("localhostmongoClientUrl") if DEBUG else os.environ.get("dockermongoClientUrl")
+    return os.environ.get("remotemongoClientUrl") if DEBUG else os.environ.get("remotemongoClientUrl")
 
 
 connect("RMDP_mongodb", host=mongoClientUrl(DEBUG))
@@ -30,7 +28,8 @@ INSTALLED_APPS = [
     'geolocation',
     'menu',
     'order',
-    'RMDP_ml'
+    'RMDP_ml',
+    'rmdp_env'
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -98,26 +97,35 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 STATIC_URL = '/static/'
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_BROKER")
 
-CELERY_BROKER_URL = broker = [os.environ.get("CELERY_BROKER_0"),
-                              os.environ.get("CELERY_BROKER_1"),
-                              os.environ.get("CELERY_BROKER_2")]
-
-CELERY_RESULT_BACKEND = [os.environ.get("CELERY_BROKER_0"),
-                         os.environ.get("CELERY_BROKER_1"),
-                         os.environ.get("CELERY_BROKER_2")]
+CELERY_TASK_ROUTES = {
+    'RMDP_ml.tasks.run_RMDP': {
+        'queue': os.environ.get('CELERY_BROKER_0')
+    },
+    'order.tasks.generatingOrder': {
+        'queue': os.environ.get('CELERY_BROKER_1')
+    },
+    'driver.tasks.updateDriver': {
+        'queue': os.environ.get('CELERY_BROKER_2')
+    },
+}
 
 CELERY_BEAT_SCHEDULE = {
     "run_RMDP": {
         "task": "RMDP_ml.tasks.run_RMDP",
         "schedule": timedelta(seconds=15),
+        'options': {'queue': os.environ.get('CELERY_BROKER_0')}
     },
     "generatingOrder": {
-        "task": "RMDP_ml.tasks.generatingOrder",
+        "task": "order.tasks.generatingOrder",
         "schedule": timedelta(seconds=15),
+        'options': {'queue': os.environ.get('CELERY_BROKER_1')}
     },
     "driverSimulator": {
-        "task": "RMDP_ml.tasks.updateDriver",
+        "task": "driver.tasks.updateDriver",
         "schedule": timedelta(seconds=1),
+        'options': {'queue': os.environ.get('CELERY_BROKER_2')}
     },
 }

@@ -9,4 +9,3 @@ echo "Doing other useful mongodb database stuff, e.g creating additional mongo u
 mongo admin -u mongoadmin -p mypass --eval "db.createUser({user: 'admin', pwd: 'admin', roles: [{role: 'readWrite', db: 'RMDP'}]});"
 mongorestore -u admin -p admin --authenticationDatabase admin -d RMDP /data/mongo-seed-data
 #echo "Mongo users created."
-

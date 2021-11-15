@@ -4,26 +4,24 @@ services:
     build: .
     container_name: django
     command: 'python manage.py runserver 0.0.0.0:8000'
+    environment:
+      DJANGO_ALLOWED_HOSTS: 'localhost 127.0.0.1 [::1]'
+      DJANGO_SETTINGS_MODULE: 'core.settings'
     volumes:
       - '.:/usr/src/app/'
     ports:
       - '8000:8000'
-    environment:
-      DEBUG: 1
-      DJANGO_ALLOWED_HOSTS: 'localhost 127.0.0.1 [::1]'
-      CELERY_BROKER: 'redis://redis:6379/0'
-      CELERY_BACKEND: 'redis://redis:6379/0'
+    env_file:
+      - enviroment.env
     depends_on:
-      - redis
       - mongodb
     networks:
       - rmdp_api
   mongodb:
     image: 'mongo:latest'
     container_name: mongo-server
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=mongoadmin
-      - MONGO_INITDB_ROOT_PASSWORD=mypass
+    env_file:
+      - enviroment.env
     ports:
       - '27017:27017'
     volumes:
@@ -37,13 +35,8 @@ services:
     image: mongo-express
     links:
       - mongodb
-    environment:
-      ME_CONFIG_MONGODB_SERVER: mongodb
-      ME_CONFIG_BASICAUTH_USERNAME: mongoadmin
-      ME_CONFIG_BASICAUTH_PASSWORD: mypass
-      ME_CONFIG_MONGODB_PORT: 27017
-      ME_CONFIG_MONGODB_ADMINUSERNAME: mongoadmin
-      ME_CONFIG_MONGODB_ADMINPASSWORD: mypass
+    env_file:
+      - enviroment.env
     ports:
       - '8081:8081'
     networks:
@@ -66,25 +59,79 @@ services:
       - './conf/redis/redis.conf:/tmp/redis.conf'
     networks:
       - rmdp_api
-  celery:
+  driver_worker:
     build: .
-    command: celery -A core worker -l info -c 1
+    command: celery -A driver worker -l info -c 1
     volumes:
       - .:/usr/src/app/
-    environment:
-      DEBUG: 1
     depends_on:
       - redis
-      - mongodb
+    env_file:
+      - enviroment.env
+    networks:
+      - rmdp_api
+  driver_beat:
+    build: .
+    command: celery -A driver beat -l info
+    volumes:
+      - .:/usr/src/app/
+    depends_on:
+      - redis
+    env_file:
+      - enviroment.env
+    networks:
+      - rmdp_api
+  order_worker:
+    build: .
+    command: celery -A order worker -l info -c 1
+    volumes:
+      - .:/usr/src/app/
+    depends_on:
+      - redis
+    env_file:
+      - enviroment.env
+    networks:
+      - rmdp_api
+  order_beat:
+    build: .
+    command: celery -A order beat -l info
+    volumes:
+      - .:/usr/src/app/
+    depends_on:
+      - redis
+    env_file:
+      - enviroment.env
+    networks:
+      - rmdp_api
+  rmdp_worker:
+    build: .
+    command: celery -A RMDP_ml worker -l info -c 1
+    volumes:
+      - .:/usr/src/app/
+    depends_on:
+      - redis
+    env_file:
+      - enviroment.env
+    networks:
+      - rmdp_api
+  rmdp_beat:
+    build: .
+    command: celery -A RMDP_ml beat -l info
+    volumes:
+      - .:/usr/src/app/
+    depends_on:
+      - redis
+    env_file:
+      - enviroment.env
     networks:
       - rmdp_api
   celery-beat:
     build: .
-    command: celery -A core beat -l info
+    command: celery -A core beat  -l info
     volumes:
       - .:/usr/src/app/
-    environment:
-      DEBUG: 1
+    env_file:
+      - enviroment.env
     depends_on:
       - redis
       - mongodb

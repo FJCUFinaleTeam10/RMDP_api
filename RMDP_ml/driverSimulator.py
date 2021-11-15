@@ -81,4 +81,3 @@ def updateDriverLocation(city):
                 Mongo_Operator.updateRoute(route)
     except Exception as e:
         logging.critical(e, exc_info=True)
-generateThread()

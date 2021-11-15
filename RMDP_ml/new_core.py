@@ -3,6 +3,7 @@ import logging
 import math
 import os
 import random
+from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime, timedelta, time
 import numpy as np
 from RMDP_ml.Math import Geometry
@@ -491,5 +492,3 @@ def computeState(agent, city):
             return state
     except Exception as e:
         logging.critical(e, exc_info=True)
-
-generateThread()

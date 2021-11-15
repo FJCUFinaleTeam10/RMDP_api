@@ -56,5 +56,4 @@ def generateOrder(currentCity):
 #   headToRes: 2
 #   head ToCus: 3
 #   deliverd: 4
-generateThread()
 
