@@ -1,19 +1,22 @@
 from django.contrib import admin
 from django.urls import path
 
-from driver.views import listAll, getDriverBaseOnCity,getDriverBaseOnID
+from driver.views import listAll, getDriverBaseOnCity, getDriverBaseOnID
 from geolocation.views import getAllCountryCode, getAllCities, getCountryCode, getCities
 from menu.views import getMenu, getMenuBaseOnRestaurant
 from order.views import createOrder, getOrderBaseOnCity
 from restaurant.views import listAllRestaurantList, getRestaurantBaseOnId, getRestaurantBaseOnCity, listRestaurantList
 from rmdp_env.views import listAllSetting, getSettingBaseOneCity, updateSetting
-from q_learning.views import  getQlearningBaseOnCity
+from q_learning.views import getQlearningBaseOnCity
+
+from route.views import getCurrentRouteBaseOnDriverID
+
 urlpatterns = [
     path('admin/', admin.site.urls, name='index'),
 
     path('driver/getalldriver/', listAll, name='index'),
     path('driver/getdriverbaseoncity/', getDriverBaseOnCity, name='index'),
-    path('driver/getdriverbaseonid/', getDriverBaseOnID,name='index'),
+    path('driver/getdriverbaseonid/', getDriverBaseOnID, name='index'),
 
     path('restaurant/getallrestaurantlist', listAllRestaurantList, name='index'),
     path('restaurant/getrestaurantlist/', listRestaurantList, name='index'),
@@ -37,4 +40,7 @@ urlpatterns = [
     path('envsetting/getsettingbaseoncity/', getSettingBaseOneCity),
     path('envsetting/updatesetting/', updateSetting),
     path('qlearning/getqlearningbaseoncity/', getQlearningBaseOnCity),
+
+    path('route/getcurrentroute/', getCurrentRouteBaseOnDriverID),
+
 ]

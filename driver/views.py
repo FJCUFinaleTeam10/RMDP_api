@@ -29,9 +29,10 @@ def getDriverBaseOnCity(request):
     try:
         filterSet = request.data['params']
         cityName = filterSet.get('city', 'Agra')
+        cityID = filterSet.get('cityId', 1)
         skip = filterSet.get('skip', 0)
         limit = filterSet.get('limit', 1000)
-        driverList = driver.objects(City=cityName).skip(skip).limit(limit)
+        driverList = driver.objects(City_id=cityID).skip(skip).limit(limit)
         result = DriverSerializer(driverList, many=True)
         response = JsonResponse(json.loads(json_util.dumps(result.data)), safe=False)
         response["Access-Control-Allow-Origin"] = "*"
@@ -49,8 +50,7 @@ def getDriverBaseOnCity(request):
 @api_view(['POST'])
 def getDriverBaseOnID(request):
     try:
-        filterSet = request.data['params']
-        driverID = filterSet.get('driverId', None)
+        driverID = int(request.data['params'].get('driverId', None))
 
         driverList = driver.objects(Driver_ID=driverID)
         result = DriverSerializer(driverList, many=True)

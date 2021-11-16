@@ -1,7 +1,7 @@
 from rest_framework_mongoengine.serializers import DocumentSerializer
-from .models import order
+from rmdp_env.models import rmdp_env
 
 
 class OrderSerializer(DocumentSerializer):
     class Meta:
-        model = order
+        model = rmdp_env

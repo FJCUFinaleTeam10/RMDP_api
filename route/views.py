@@ -1,9 +1,13 @@
+import json
 import logging
 
+from bson import json_util
+from django.db import IntegrityError
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
+from mongoengine import MultipleObjectsReturned
 from rest_framework.decorators import api_view
-from .models import order
-from .serializers import OrderSerializer
+from route.models import route
+from route.serializers import RouteSerializer
 from mongoengine.base import get_document as get_model
 
 
@@ -12,8 +16,8 @@ from mongoengine.base import get_document as get_model
 def listAll(request):
     offset = int(request.data['skip'])
     items_per_page = int(request.data['limit'])
-    orderList = order.objects.skip(offset).limit(items_per_page)
-    result = OrderSerializer(orderList, many=True)
+    orderList = route.objects.skip(offset).limit(items_per_page)
+    result = RouteSerializer(orderList, many=True)
     response = JsonResponse(result.data, safe=False)
     response["Access-Control-Allow-Origin"] = "*"
     return response
@@ -22,7 +26,7 @@ def listAll(request):
 @api_view(['POST'])
 def createOrder(request):
     try:
-        newOrder = order(order_request_time=request.data['requestTime'])
+        newOrder = route(order_request_time=request.data['requestTime'])
         newOrder.order_restaurant_carrier_restaurantId = int(request.data['restaurantId'])
         newOrder.order_delivered_customer_date = None
         newOrder.driverId = None
@@ -42,8 +46,8 @@ def createOrder(request):
 def getOrder(request):
     offset = int(request.data['skip'])
     items_per_page = int(request.data['limit'])
-    orderList = order.objects.skip(offset).limit(items_per_page)
-    result = OrderSerializer(orderList, many=True)
+    orderList = route.objects.skip(offset).limit(items_per_page)
+    result = RouteSerializer(orderList, many=True)
     response = JsonResponse(result.data, safe=False)
     response["Access-Control-Allow-Origin"] = "*"
     return response
@@ -53,15 +57,35 @@ def getOrder(request):
 def getOrderBaseOnCity(request):
     try:
         cityID = request.data['params']['cityId']
-        skip = request.data['params'].get('skip', 0)
-        limit = request.data['params'].get('limit', 100000000)
         restaurant = get_model('restaurant')
         filteredCityList = list(restaurant.objects(City_id=cityID).values_list('Restaurant_ID'))
 
-        orderList = order.objects(order_restaurant_carrier_restaurantId__in=filteredCityList).skip(skip).limit(limit)
-        result = OrderSerializer(orderList, many=True)
+        orderList = route.objects(order_restaurant_carrier_restaurantId__in=filteredCityList)
+        result = RouteSerializer(orderList, many=True)
         response = JsonResponse(result.data, safe=False)
         response["Access-Control-Allow-Origin"] = "*"
         return response
     except Exception as e:
         logging.ERROR
+
+
+@api_view(['POST'])
+def getCurrentRouteBaseOnDriverID(request):
+    try:
+        filterSet = request.data['params']
+        driverID = int(filterSet.get('driverID', None))
+
+        driverList = route.objects(Driver_ID=driverID)
+        result = RouteSerializer(driverList, many=True)
+        response = JsonResponse(json.loads(json_util.dumps(result.data)), safe=False)
+        response["Access-Control-Allow-Origin"] = "*"
+        response["Access-Control-Allow-Methods"] = "POST"
+        response["Access-Control-Max-Age"] = "1000"
+        response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+        return response
+    except IntegrityError as IE:
+        raise IE
+    except MultipleObjectsReturned as ME:
+        raise ME
+    except Exception as e:
+        raise e
