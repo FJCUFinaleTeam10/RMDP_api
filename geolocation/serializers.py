@@ -1,5 +1,5 @@
 from rest_framework_mongoengine.serializers import DocumentSerializer
-from .models import *
+from geolocation.models import *
 
 
 class CitySerializer(DocumentSerializer):

@@ -125,7 +125,7 @@ services:
       - rmdp_api
   celery-beat:
     build: .
-    command: celery -A core beat  -l info
+    command: celery -A apps beat  -l info
     volumes:
       - .:/usr/src/app/
     env_file:

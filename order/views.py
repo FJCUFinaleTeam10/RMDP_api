@@ -2,8 +2,8 @@ import logging
 
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from rest_framework.decorators import api_view
-from .models import order
-from .serializers import OrderSerializer
+from order.models import order
+from order.serializers import OrderSerializer
 from mongoengine.base import get_document as get_model
 
 

@@ -1,8 +1,8 @@
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 
-from .models import menu
-from .serializers import MenuSerializer
+from menu.models import menu
+from menu.serializers import MenuSerializer
 
 
 @api_view(['POST'])

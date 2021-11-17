@@ -1,5 +1,5 @@
 from rest_framework_mongoengine.serializers import DocumentSerializer
-from .models import driver
+from driver.models import driver
 
 
 class DriverSerializer(DocumentSerializer):

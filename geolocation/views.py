@@ -2,7 +2,7 @@
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 
-from .serializers import *
+from geolocation.serializers import *
 
 
 # Create your views here.

@@ -3,12 +3,12 @@ import json
 
 from bson import json_util
 from django.db import IntegrityError
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from mongoengine import MultipleObjectsReturned
 from rest_framework.decorators import api_view
 
-from .models import driver
-from .serializers import DriverSerializer, GenerateDriverSerializer
+from driver.models import driver
+from driver.serializers import DriverSerializer
 
 
 # Create your views here.
@@ -46,6 +46,7 @@ def getDriverBaseOnCity(request):
         raise ME
     except Exception as e:
         raise e
+
 
 @api_view(['POST'])
 def getDriverBaseOnID(request):

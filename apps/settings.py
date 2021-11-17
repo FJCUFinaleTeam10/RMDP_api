@@ -42,7 +42,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
 ]
-ROOT_URLCONF = 'core.urls'
+ROOT_URLCONF = 'apps.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -58,7 +58,7 @@ TEMPLATES = [
         },
     },
 ]
-WSGI_APPLICATION = 'core.wsgi.application'
+WSGI_APPLICATION = 'apps.wsgi.application'
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
