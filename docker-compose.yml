@@ -1,16 +1,17 @@
 version: '3.7'
 services:
-  django:
-    build: .
-    container_name: django
+  web:
+    build:
+      context: .
+      dockerfile: web.Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - '.:/usr/src/app/'
+      - .:/usr/src/app/
     ports:
-      - '8000:8000'
+      - 8000:8000
     env_file:
       - enviroment.env
     depends_on:
-      - redis
       - mongodb
     networks:
       - rmdp_api
@@ -57,7 +58,9 @@ services:
     networks:
       - rmdp_api
   driver_worker:
-    build: .
+    build:
+      context: .
+      dockerfile: web.Dockerfile
     command: celery -A driver worker -l info -c 1
     volumes:
       - .:/usr/src/app/
@@ -68,7 +71,9 @@ services:
     networks:
       - rmdp_api
   driver_beat:
-    build: .
+    build:
+      context: .
+      dockerfile: web.Dockerfile
     command: celery -A driver beat -l info
     volumes:
       - .:/usr/src/app/
@@ -79,7 +84,9 @@ services:
     networks:
       - rmdp_api
   order_worker:
-    build: .
+    build:
+      context: .
+      dockerfile: web.Dockerfile
     command: celery -A order worker -l info -c 1
     volumes:
       - .:/usr/src/app/
@@ -90,7 +97,9 @@ services:
     networks:
       - rmdp_api
   order_beat:
-    build: .
+    build:
+      context: .
+      dockerfile: web.Dockerfile
     command: celery -A order beat -l info
     volumes:
       - .:/usr/src/app/
@@ -101,7 +110,9 @@ services:
     networks:
       - rmdp_api
   rmdp_worker:
-    build: .
+    build:
+      context: .
+      dockerfile: web.Dockerfile
     command: celery -A RMDP_ml worker -l info -c 1
     volumes:
       - .:/usr/src/app/
@@ -112,7 +123,9 @@ services:
     networks:
       - rmdp_api
   rmdp_beat:
-    build: .
+    build:
+      context: .
+      dockerfile: web.Dockerfile
     command: celery -A RMDP_ml beat -l info
     volumes:
       - .:/usr/src/app/
@@ -120,18 +133,6 @@ services:
       - redis
     env_file:
       - enviroment.env
-    networks:
-      - rmdp_api
-  celery-beat:
-    build: .
-    command: celery -A apps beat  -l info
-    volumes:
-      - .:/usr/src/app/
-    env_file:
-      - enviroment.env
-    depends_on:
-      - redis
-      - mongodb
     networks:
       - rmdp_api
   flower:

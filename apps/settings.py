@@ -11,7 +11,7 @@ DEBUG = False if int(os.environ['DEBUG']) == 1 else True
 
 def mongoClientUrl(DEBUG):
     # return os.environ.get("localhostmongoClientUrl") if DEBUG else os.environ.get("dockermongoClientUrl")
-    return os.environ.get("remotemongoClientUrl") if DEBUG else os.environ.get("remotemongoClientUrl")
+    return os.environ.get('localhostmongoClientUrl') if DEBUG else os.environ.get('localhostmongoClientUrl')
 
 
 connect("RMDP_mongodb", host=mongoClientUrl(DEBUG))
@@ -97,35 +97,4 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 STATIC_URL = '/static/'
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER")
-CELERY_RESULT_BACKEND = os.environ.get("CELERY_BROKER")
 
-CELERY_TASK_ROUTES = {
-    'RMDP_ml.tasks.run_RMDP': {
-        'queue': os.environ.get('CELERY_BROKER_0')
-    },
-    'order.tasks.generatingOrder': {
-        'queue': os.environ.get('CELERY_BROKER_1')
-    },
-    'driver.tasks.updateDriver': {
-        'queue': os.environ.get('CELERY_BROKER_2')
-    },
-}
-
-CELERY_BEAT_SCHEDULE = {
-    "run_RMDP": {
-        "task": "RMDP_ml.tasks.run_RMDP",
-        "schedule": timedelta(seconds=15),
-        'options': {'queue': os.environ.get('CELERY_BROKER_0')}
-    },
-    "generatingOrder": {
-        "task": "order.tasks.generatingOrder",
-        "schedule": timedelta(seconds=15),
-        'options': {'queue': os.environ.get('CELERY_BROKER_1')}
-    },
-    "driverSimulator": {
-        "task": "driver.tasks.updateDriver",
-        "schedule": timedelta(seconds=1),
-        'options': {'queue': os.environ.get('CELERY_BROKER_2')}
-    },
-}

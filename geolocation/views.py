@@ -1,4 +1,4 @@
-
+from django.db import IntegrityError
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 
@@ -48,8 +48,15 @@ def getCities(request):
 
 @api_view(['GET'])
 def getAllCities(request):
-    cityList = all_cities.objects.all()
-    result = CitySerializer(cityList, many=True)
-    response = JsonResponse(result.data, safe=False)
-    response["Access-Control-Allow-Origin"] = "*"
-    return response
+    try:
+        cityList = all_cities.objects.all()
+        result = CitySerializer(cityList, many=True)
+        response = JsonResponse(result.data, safe=False)
+        response["Access-Control-Allow-Origin"] = "*"
+        return response
+    except IntegrityError:
+        raise IndentationError
+    except MultipleObjectsReturned:
+        raise MultipleObjectsReturned
+    except Exception as e:
+        raise e
