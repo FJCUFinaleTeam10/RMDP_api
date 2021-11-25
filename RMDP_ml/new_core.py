@@ -107,7 +107,6 @@ def sequencePermutation(city):
         eta = 0.95
         k = 1
         # RMDP setting
-        pairdOrder = np.zeros(shape=(0, 13))
         nonUpdateOrder = np.zeros(shape=(0,13))
         # simulated annealing
         t = initT
@@ -561,3 +560,4 @@ def computeState(agent, city):
             return state
     except Exception as e:
         logging.critical(e, exc_info=True)
+generateThread()

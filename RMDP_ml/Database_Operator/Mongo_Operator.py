@@ -10,7 +10,9 @@ from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from pymongoarrow.api import Schema
 from pymongoarrow.monkey import patch_all
+from datetime import datetime
 import time
+
 patch_all()
 
 
@@ -24,6 +26,7 @@ def getMongoClientUrl(DEBUG):
 DEBUG = False if int(os.environ['DEBUG']) == 1 else True
 client = MongoClient(getMongoClientUrl(DEBUG))
 databaseName = client["RMDP"]
+
 restaurantCollection = databaseName["restaurant"]
 driverCollection = databaseName["driver"]
 all_citiesCollection = databaseName["all_cities"]
@@ -31,6 +34,15 @@ country_codeCollection = databaseName["country_code"]
 orderCollection = databaseName["order"]
 qlearningCollection = databaseName["q_learning"]
 RouteCollection = databaseName["route"]
+HistoryCollection = databaseName["history"]
+cityDict = {
+    'City_id': 0,
+    'Country_Code': 1,
+    'Latitude': 2,
+    'Longitude': 3,
+    'radus':4
+}
+
 driverPandasSchema = Schema({
     'Driver_ID': pyarrow.int64(),
     'Country_Code': pyarrow.int64(),
@@ -44,14 +56,14 @@ driverPandasSchema = Schema({
     'Node_ID': pyarrow.int64(),
     'Node_num': pyarrow.int64()
 })
-routeSchema = Schema({'Driver_ID':pyarrow.int64()
-                     ,'Latitude' :pyarrow.float64()
-                     ,'Longitude':pyarrow.float64()
-                     ,'nodetype':pyarrow.int64()
-                     ,'Restaurant_ID':pyarrow.int64(),
-                      'Order_ID':pyarrow.int64(),
-                      'Node_ID':pyarrow.int64()
-                         ,'delivered':pyarrow.int64()
+routeSchema = Schema({'Driver_ID': pyarrow.int64()
+                         , 'Latitude': pyarrow.float64()
+                         , 'Longitude': pyarrow.float64()
+                         , 'nodetype': pyarrow.int64()
+                         , 'Restaurant_ID': pyarrow.int64(),
+                      'Order_ID': pyarrow.int64(),
+                      'Node_ID': pyarrow.int64()
+                         , 'delivered': pyarrow.int64()
                       })
 orderSchema = Schema({'driver_id': pyarrow.int64(),
                       'order_approved_at': pyarrow.timestamp('ms'),
@@ -61,9 +73,9 @@ orderSchema = Schema({'driver_id': pyarrow.int64(),
                       'Qtable_position': pyarrow.int64(),
                       'order_delivered_customer_date': pyarrow.timestamp('ms'),
                       'Qtable_updated': pyarrow.int64(),
-                      'order_estimated_delivery_date':  pyarrow.timestamp('ms'),
+                      'order_estimated_delivery_date': pyarrow.timestamp('ms'),
                       'order_request_time': pyarrow.timestamp('ms'),
-                      'order_restaurant_carrier_date':  pyarrow.timestamp('ms'),
+                      'order_restaurant_carrier_date': pyarrow.timestamp('ms'),
                       'order_restaurant_carrier_restaurantId': pyarrow.int64(),
                       'order_status': pyarrow.int64(),
                       })
@@ -81,11 +93,11 @@ restaurantSchema = Schema({'Restaurant_ID': pyarrow.int64(),
                            'order_num': pyarrow.int64()
                            })
 
-qlearningSchema = ['City_id','state_index', 'action_index','q_table',  'center',
-                     'side_length',
+qlearningSchema = ['City_id', 'state_index', 'action_index', 'q_table', 'center',
+                   'side_length',
                    'learning_rate',
-                    'gamma',
-                   'epsilon','max_epislon', 'min_epislon', 'decay_rate',  'nearBY', 'episode','capacity']
+                   'gamma',
+                   'epsilon', 'max_epislon', 'min_epislon', 'decay_rate', 'nearBY', 'episode', 'capacity']
 
 
 def getAllCity():
@@ -97,10 +109,10 @@ def getAllCity():
 def getDriverBaseOnCity(cityId):
     rawData = driverCollection.find_numpy_all({'City_id': int(cityId)}, schema=driverPandasSchema)
 
-    return np.vstack((rawData['Driver_ID'],rawData['Country_Code'],
-    rawData['City_id'] ,rawData['Longitude'],
-    rawData['Latitude'],rawData['Velocity'],rawData['Capacity'],rawData['State'],
-    rawData['Reward'],rawData['Node_ID'],rawData['Node_num'])).T
+    return np.vstack((rawData['Driver_ID'], rawData['Country_Code'],
+                      rawData['City_id'], rawData['Longitude'],
+                      rawData['Latitude'], rawData['Velocity'], rawData['Capacity'], rawData['State'],
+                      rawData['Reward'], rawData['Node_ID'], rawData['Node_num'])).T
 
 
 def getHasOrderDriverBaseOnCity(cityId):
@@ -110,13 +122,12 @@ def getHasOrderDriverBaseOnCity(cityId):
                      }}], schema=driverPandasSchema)
 
     return np.vstack((rawData['Driver_ID'], rawData['Country_Code'],
-               rawData['City_id'], rawData['Longitude'],
-               rawData['Latitude'], rawData['Velocity'], rawData['Capacity'], rawData['State'],
-               rawData['Reward'], rawData['Node_ID'], rawData['Node_num'])).T
+                      rawData['City_id'], rawData['Longitude'],
+                      rawData['Latitude'], rawData['Velocity'], rawData['Capacity'], rawData['State'],
+                      rawData['Reward'], rawData['Node_ID'], rawData['Node_num'])).T
 
 
-
-def getPairedOrderBaseOnCity( restaurantListID):
+def getPairedOrderBaseOnCity(restaurantListID):
     return list(orderCollection.find({
         '$and': [
             {"order_restaurant_carrier_restaurantId": {
@@ -132,7 +143,7 @@ def getPairedOrderBaseOnCity( restaurantListID):
 
 
 def getPairedOrderBaseOnOrderID(orderID):
-    rawData =  orderCollection.find_numpy_all({'Order_ID': int(orderID)}, schema=orderSchema)
+    rawData = orderCollection.find_numpy_all({'Order_ID': int(orderID)}, schema=orderSchema)
     rawData = np.asmatrix((
         rawData['driver_id'],
         rawData['order_approved_at'],
@@ -151,6 +162,7 @@ def getPairedOrderBaseOnOrderID(orderID):
     rawData = np.asarray(rawData)
     return rawData
 
+
 def getRestaurantIDBaseOnCityId(cityId):
     rawData = restaurantCollection.find_numpy_all({'City_id': int(cityId)}, schema=restaurantSchema)
     return rawData['Restaurant_ID']
@@ -161,35 +173,28 @@ def getRestaurantListBaseOnCity(cityId):
     return np.vstack((rawData['Restaurant_ID'], rawData['Longitude'], rawData['Latitude'], rawData['order_num'])).T
 
 
-
 def getDriverRouteBaseOnDriverID(driverId):
-    rawData =RouteCollection.find_numpy_all({'Driver_ID': int(driverId),'delivered':0}, schema=routeSchema)
-    if len(rawData)==0:
-        return np.zeros(shape=(0,8))
+    rawData = RouteCollection.find_numpy_all({'Driver_ID': int(driverId), 'delivered': 0}, schema=routeSchema)
+    if len(rawData) == 0:
+        return np.zeros(shape=(0, 8))
     else:
         return np.vstack((
             rawData['Driver_ID']
             , rawData['Latitude']
-        , rawData['Longitude']
-        , rawData['nodetype']
-        , rawData['Restaurant_ID'],
-        rawData['Order_ID'],
-        rawData['Node_ID']
-        , rawData['delivered']
+            , rawData['Longitude']
+            , rawData['nodetype']
+            , rawData['Restaurant_ID'],
+            rawData['Order_ID'],
+            rawData['Node_ID']
+            , rawData['delivered']
         )).T
 
 
-
-
-
-
-
 def getOrderBaseOnCity(filterrestTaurantCode, orderStatus):
-
     rawData = orderCollection.aggregate_numpy_all([{'$match': {"order_status": int(orderStatus),
-                                                                    "order_restaurant_carrier_restaurantId": {
-                                                                        "$in": filterrestTaurantCode}
-                                                                    }}], schema=orderSchema)
+                                                               "order_restaurant_carrier_restaurantId": {
+                                                                   "$in": filterrestTaurantCode}
+                                                               }}], schema=orderSchema)
     rawData = np.asmatrix((
         rawData['driver_id'],
         rawData['order_approved_at'],
@@ -204,23 +209,22 @@ def getOrderBaseOnCity(filterrestTaurantCode, orderStatus):
         rawData['order_restaurant_carrier_date'],
         rawData['order_restaurant_carrier_restaurantId'],
         rawData['order_status']
-                           )).T
+    )).T
 
     rawData = np.asarray(rawData)
     return rawData
 
 
-
 def updateRoute(Route):
-    Route = Route.reshape(1,8)
+    Route = Route.reshape(1, 8)
     RouteCollection.update_one(
         {
-            'Driver_ID':Route[0][0],
-            'Resrtaurant_ID':Route[0][4],
-            'Order_ID':Route[0][5],
-            'nodetype':Route[0][3]
-        },{
-            "$set":{
+            'Driver_ID': Route[0][0],
+            'Resrtaurant_ID': Route[0][4],
+            'Order_ID': Route[0][5],
+            'nodetype': Route[0][3]
+        }, {
+            "$set": {
                 'Driver_ID': Route[0][0]
                 , 'Latitude': Route[0][1]
                 , 'Longitude': Route[0][2]
@@ -232,6 +236,7 @@ def updateRoute(Route):
             }
         }, upsert=True
     )
+
 
 def updateDriver(driver):
     driverCollection.update_one({
@@ -247,28 +252,31 @@ def updateDriver(driver):
         },
     })
 
-def updateRestaurantOrdernum(restaurantID,currentordernum):
+
+def updateRestaurantOrdernum(restaurantID, currentordernum):
     try:
         restaurantCollection.update_one({
-            'Restaurant_ID':int(restaurantID)
-        },{
+            'Restaurant_ID': int(restaurantID)
+        }, {
             '$set': {
-                'order_num':int(currentordernum)
+                'order_num': int(currentordernum)
             }
         }, upsert=False)
     except PyMongoError as py_mongo_error:
         logging.critical(py_mongo_error, exc_info=True)
     except Exception as e:
         logging.critical(e, exc_info=True)
+
+
 def updateOrder(order):
     try:
         orderCollection.update_one({
             'Order_ID': order[4],
-            'order_restaurant_carrier_restaurantId':order[11]
+            'order_restaurant_carrier_restaurantId': order[11]
         }, {
             '$set': {
 
-                'driver_id': None if np.isnan(order[0])else order[0],
+                'driver_id': None if np.isnan(order[0]) else order[0],
                 'order_approved_at': order[1],
                 'Latitude': order[2],
                 'Longitude': order[3],
@@ -293,7 +301,7 @@ def insertOrder(order):
     try:
         orderCollection.insert(
             {
-                'order_approved_at': order['order_approved_at'] ,
+                'order_approved_at': order['order_approved_at'],
                 'Longitude': order['Longitude'],
                 'Latitude': order['Latitude'],
                 'order_delivered_customer_date': order[
@@ -316,14 +324,12 @@ def insertOrder(order):
 
     except PyMongoError as py_mongo_error:
         logging.critical(py_mongo_error, exc_info=True)
+
+
 def getQlearning(cityName):
     data = list(map(lambda item: list(map(lambda col: item[col], qlearningSchema)),
                     qlearningCollection.find({"City_id": cityName})))
     return DataFrame(data, columns=qlearningSchema).to_numpy()
-
-
-
-
 
 
 def updateQlearning(q_setting):
@@ -356,7 +362,30 @@ def updateQlearning(q_setting):
 
 def getRestaurantOrderCount(restaurantId):
     rawData = restaurantCollection.find_numpy_all({'Restaurant_ID': int(restaurantId)}, schema=restaurantSchema)
-    return rawData['order_num'][0] #accumulate order or current order
+    return rawData['order_num'][0]  # accumulate order or current order
     # return rawData['Restaurant_ID']
+
+
+def getRestaurantOrderCount(restaurantId):
+    rawData = restaurantCollection.find_numpy_all({'Restaurant_ID': int(restaurantId)}, schema=restaurantSchema)
+    return rawData['order_num'][0]
+
+
 def lengthOforder():
     return orderCollection.count()
+
+
+def insertHistory(driver):
+    try:
+        orderCollection.insert(
+            {
+
+                'Longitude': driver['Longitude'],
+                'Latitude': driver['Latitude'],
+                'DateTime': datetime.now(),
+                'Car_ID': driver['Driver_ID']
+
+            }
+        )
+    except PyMongoError as py_mongo_error:
+        logging.critical(py_mongo_error, exc_info=True)

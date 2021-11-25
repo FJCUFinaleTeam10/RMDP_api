@@ -71,15 +71,7 @@ def updateDriverLocation(city):
 
                 currentDriver[4] = updatedLat
                 currentDriver[3] = updatedLon
-                # logging.info("updateded")
-            '''
-            aftterDIstance = Geometry.coorDistance(currentDriver[4],
-                                                   currentDriver[3],
-                                                   targetDestination[1],
-                                                   targetDestination[2])
-            '''
             Mongo_Operator.updateDriver(currentDriver)
-
             for route in driverRoute:
                 Mongo_Operator.updateRoute(route)
     except Exception as e:
