@@ -560,4 +560,3 @@ def computeState(agent, city):
             return state
     except Exception as e:
         logging.critical(e, exc_info=True)
-generateThread()
