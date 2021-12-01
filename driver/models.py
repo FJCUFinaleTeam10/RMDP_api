@@ -6,12 +6,13 @@ from mongoengine import *
 class driver(Document):
     Capacity = IntField()
     City_id = IntField()
-    Country_Code = IntField()
-    Driver_ID = StringField()
+    Driver_ID = IntField()
     Latitude = FloatField()
     Longitude = FloatField()
     Node_ID = IntField()
-    Node_num = IntField()
     Reward = FloatField()
-    State = IntField()
+    Node_num = IntField()
     Velocity = IntField()
+    City = StringField()
+    State = IntField()
+

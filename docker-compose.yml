@@ -80,7 +80,7 @@ services:
     depends_on:
       - redis
     env_file:
-      - enviroment.env
+      - dev.env
     networks:
       - rmdp_api
   order_worker:
@@ -93,7 +93,7 @@ services:
     depends_on:
       - redis
     env_file:
-      - enviroment.env
+      - dev.env
     networks:
       - rmdp_api
   order_beat:
@@ -106,7 +106,7 @@ services:
     depends_on:
       - redis
     env_file:
-      - enviroment.env
+      - dev.env
     networks:
       - rmdp_api
   rmdp_worker:

@@ -4,7 +4,7 @@ import random
 from collections import OrderedDict
 from datetime import datetime
 
-#import numba as nb
+# import numba as nb
 import numpy as np
 import pyarrow
 
@@ -27,7 +27,7 @@ def generateOrder(currentCity):
         restaurant = Mongo_Operator.getRestaurantListBaseOnCity(currentCity[0])
         filteredRestaurantId = Mongo_Operator.getRestaurantIDBaseOnCityId(currentCity[0])
         targetRestaurantId = filteredRestaurantId[random.randint(0, len(filteredRestaurantId) - 1)]
-        #currentOrderCount = Mongo_Operator.getRestaurantOrderCount(targetRestaurantId)
+        # currentOrderCount = Mongo_Operator.getRestaurantOrderCount(targetRestaurantId)
         orderLength = Mongo_Operator.lengthOforder()
         order = np.array([])
         Mongo_Operator.insertOrder({
@@ -41,13 +41,13 @@ def generateOrder(currentCity):
             'order_request_time': datetime.now(),
             'order_restaurant_carrier_restaurantId': float(targetRestaurantId),
             'order_status': 0,
-            'Order_ID': orderLength+1,
+            'Order_ID': orderLength + 1,
             'Qtable_position': 0,
             'Qtable_updated': 0,
             'customer_phone_number': None
         })
 
-        #Mongo_Operator.updateRestaurantOrdernum(float(targetRestaurantId),currentOrderCount+1)
+        # Mongo_Operator.updateRestaurantOrdernum(float(targetRestaurantId),currentOrderCount+1)
     except Exception as e:
         logging.critical(e, exc_info=True)
 
@@ -57,4 +57,4 @@ def generateOrder(currentCity):
 #   headToRes: 2
 #   head ToCus: 3
 #   deliverd: 4
-
+generateThread()

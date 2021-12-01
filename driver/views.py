@@ -27,11 +27,9 @@ def listAll(request):
 @api_view(['POST'])
 def getDriverBaseOnCity(request):
     try:
-        filterSet = request.data['params']
-        cityName = filterSet.get('city', 'Agra')
-        cityID = filterSet.get('cityId', 1)
-        skip = filterSet.get('skip', 0)
-        limit = filterSet.get('limit', 1000)
+        cityID = request.data['params'].get('cityId', 1)
+        skip = request.data['params'].get('skip', 0)
+        limit = request.data['params'].get('limit', 1000)
         driverList = driver.objects(City_id=cityID).skip(skip).limit(limit)
         result = DriverSerializer(driverList, many=True)
         response = JsonResponse(json.loads(json_util.dumps(result.data)), safe=False)

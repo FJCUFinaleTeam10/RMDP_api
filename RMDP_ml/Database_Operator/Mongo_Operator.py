@@ -18,12 +18,12 @@ patch_all()
 
 def getMongoClientUrl(DEBUG):
     if DEBUG:
-        return "mongodb://admin:admin@localhost:27017/RMDP?authSource=admin"
+        return os.environ.get("remotemongoClientUrl")
     else:
-        return "mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin"
+        return os.environ.get("DOCKERMONGOCLIENTURL")
 
 
-DEBUG = False if int(os.environ['DEBUG']) == 1 else True
+DEBUG = False if int(os.environ['DEBUG']) != 1 else True
 client = MongoClient(getMongoClientUrl(DEBUG))
 databaseName = client["RMDP"]
 
