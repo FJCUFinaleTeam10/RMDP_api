@@ -72,11 +72,10 @@ def getOrderBaseOnCity(request):
 @api_view(['POST'])
 def getCurrentRouteBaseOnDriverID(request):
     try:
-        filterSet = request.data['params']
-        driverID = int(filterSet.get('driverID', None))
+        driverID = int(request.data['params'].get('driverID', None))
 
         driverList = route.objects(Driver_ID=driverID)
-        result = RouteSerializer(driverList, many=True)
+        result = RouteSerializer(driverList)
         response = JsonResponse(json.loads(json_util.dumps(result.data)), safe=False)
         response["Access-Control-Allow-Origin"] = "*"
         response["Access-Control-Allow-Methods"] = "POST"

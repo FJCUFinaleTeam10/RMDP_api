@@ -2,7 +2,15 @@ from datetime import timedelta
 from pathlib import Path
 from mongoengine import connect
 import os
+from dotenv import load_dotenv
+import os
+load_dotenv()
+# from django-environ import environ
+# base = environ.Path(__file__) - 2  # two folders back (/a/b/ - 2 = /)
+# environ.Env.read_env(env_file=base('.env'))  # reading .env file
+
 from RMDP_ml import tasks
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY")
@@ -10,11 +18,11 @@ DEBUG = False if int(os.environ['DEBUG']) == 1 else True
 
 
 def mongoClientUrl(DEBUG):
-    # return os.environ.get("localhostmongoClientUrl") if DEBUG else os.environ.get("dockermongoClientUrl")
     return os.environ.get('localhostmongoClientUrl') if DEBUG else os.environ.get('localhostmongoClientUrl')
 
 
 connect("RMDP_mongodb", host=mongoClientUrl(DEBUG))
+print('connected to ',mongoClientUrl(DEBUG))
 
 INSTALLED_APPS = [
     'django.contrib.admin',

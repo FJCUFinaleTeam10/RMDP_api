@@ -107,7 +107,7 @@ def sequencePermutation(city):
         eta = 0.95
         k = 1
         # RMDP setting
-        nonUpdateOrder = np.zeros(shape=(0,13))
+        nonUpdateOrder = np.zeros(shape=(0, 13))
         # simulated annealing
         t = initT
         counter = 0
@@ -124,7 +124,7 @@ def sequencePermutation(city):
         q_setting = Mongo_Operator.getQlearning(city[0])
         route = driverHashTable(driverList)
         if len(finishedOrder) != 0:
-            nonUpdateOrder = np.concatenate((nonUpdateOrder, finishedOrder[finishedOrder[:,7] ==0] ), axis=0)
+            nonUpdateOrder = np.concatenate((nonUpdateOrder, finishedOrder[finishedOrder[:, 7] == 0]), axis=0)
             updateRealReward(nonUpdateOrder, restaurantList, q_setting)
         if len(unAssignOrder) == 0 and len(postponedOrder) > 0:
             skipPostponement = True
@@ -169,7 +169,6 @@ def sequencePermutation(city):
                     paird_list = copy.deepcopy(pairdorder_new)
                     q_list = copy.deepcopy(q_setting_new)
                     update_route = copy.deepcopy(update_route_new)
-
 
                 counter += 1
                 end = time.time()
@@ -424,6 +423,7 @@ def updatePosponedOrder(pospondList):
             Mongo_Operator.updateOrder(order)
     except Exception as e:
         logging.critical(e, exc_info=True)
+
 
 def updatePairdOrder(pairedOrderList):
     try:

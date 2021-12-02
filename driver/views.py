@@ -3,8 +3,9 @@ import json
 
 from bson import json_util
 from django.db import IntegrityError
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from mongoengine import MultipleObjectsReturned
+from requests import Response
 from rest_framework.decorators import api_view
 
 from driver.models import driver
@@ -29,21 +30,24 @@ def getDriverBaseOnCity(request):
     try:
         cityID = request.data['params'].get('cityId', 1)
         skip = request.data['params'].get('skip', 0)
-        limit = request.data['params'].get('limit', 1000)
+        limit = request.data['params'].get('limit', 9999999)
         driverList = driver.objects(City_id=cityID).skip(skip).limit(limit)
+        totalValue = driver.objects(City_id=cityID).count()
         result = DriverSerializer(driverList, many=True)
-        response = JsonResponse(json.loads(json_util.dumps(result.data)), safe=False)
+        response = {}
         response["Access-Control-Allow-Origin"] = "*"
         response["Access-Control-Allow-Methods"] = "POST"
         response["Access-Control-Max-Age"] = "1000"
         response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
-        return response
+        response['count'] = totalValue
+        response['data'] = json.loads(json_util.dumps(result.data))
+        return JsonResponse(response)
     except IntegrityError as IE:
-        raise IE
+        print(IE)
     except MultipleObjectsReturned as ME:
-        raise ME
+        print(ME)
     except Exception as e:
-        raise e
+        print(e)
 
 
 @api_view(['POST'])

@@ -2,11 +2,12 @@ from mongoengine import *
 
 
 class route(Document):
-    Driver_ID = StringField()
-    Latitude = IntField()
+    delivered = IntField()
+    Driver_ID = IntField()
+    Latitude = FloatField()
     Longitude = FloatField()
     Node_ID = IntField()
+    nodetype = IntField()
     Order_ID = IntField()
-    Restaurant_ID = IntField()
-    delivered = IntField()
-    nodetype =IntField()
+    Restaurant_ID = FloatField()
+
