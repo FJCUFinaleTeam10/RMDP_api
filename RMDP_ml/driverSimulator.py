@@ -77,5 +77,3 @@ def updateDriverLocation(city):
     except Exception as e:
         logging.critical(e, exc_info=True)
 
-
-generateThread()
