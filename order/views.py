@@ -1,11 +1,14 @@
+import json
 import logging
 
+from django.db import IntegrityError
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
+from mongoengine import MultipleObjectsReturned
 from rest_framework.decorators import api_view
 from order.models import order
 from order.serializers import OrderSerializer
 from mongoengine.base import get_document as get_model
-
+from bson import json_util
 
 # Create your views here.
 @api_view(['GET'])
@@ -57,11 +60,20 @@ def getOrderBaseOnCity(request):
         limit = request.data['params'].get('limit', 100000000)
         restaurant = get_model('restaurant')
         filteredCityList = list(restaurant.objects(City_id=cityID).values_list('Restaurant_ID'))
-
         orderList = order.objects(order_restaurant_carrier_restaurantId__in=filteredCityList).skip(skip).limit(limit)
+        totalValue = order.objects(order_restaurant_carrier_restaurantId__in=filteredCityList).count()
         result = OrderSerializer(orderList, many=True)
-        response = JsonResponse(result.data, safe=False)
+        response = {}
         response["Access-Control-Allow-Origin"] = "*"
-        return response
+        response["Access-Control-Allow-Methods"] = "POST"
+        response["Access-Control-Max-Age"] = "1000"
+        response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
+        response['count'] = totalValue
+        response['data'] = json.loads(json_util.dumps(result.data))
+        return JsonResponse(response)
+    except IntegrityError as IE:
+        print(IE)
+    except MultipleObjectsReturned as ME:
+        print(ME)
     except Exception as e:
-        logging.ERROR
+        print(e)
