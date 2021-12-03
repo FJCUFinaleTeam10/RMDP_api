@@ -220,7 +220,7 @@ def updateRoute(Route):
     RouteCollection.update_one(
         {
             'Driver_ID': Route[0][0],
-            'Resrtaurant_ID': Route[0][4],
+            'Restaurant_ID': Route[0][4],
             'Order_ID': Route[0][5],
             'nodetype': Route[0][3]
         }, {

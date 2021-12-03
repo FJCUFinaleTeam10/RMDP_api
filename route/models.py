@@ -9,5 +9,5 @@ class route(Document):
     Node_ID = IntField()
     nodetype = IntField()
     Order_ID = IntField()
-    Restaurant_ID = FloatField()
+    Restaurant_ID = IntField()
 

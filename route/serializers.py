@@ -5,3 +5,4 @@ from route.models import route
 class RouteSerializer(DocumentSerializer):
     class Meta:
         model = route
+        fields = '__all__'

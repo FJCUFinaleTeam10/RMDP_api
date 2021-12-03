@@ -64,8 +64,8 @@ def getDriverBaseOnID(request):
         response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
         return response
     except IntegrityError as IE:
-        raise IE
+        print(IE)
     except MultipleObjectsReturned as ME:
-        raise ME
+        print(ME)
     except Exception as e:
-        raise e
+        print(e)

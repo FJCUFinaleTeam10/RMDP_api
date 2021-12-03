@@ -74,8 +74,8 @@ def getCurrentRouteBaseOnDriverID(request):
     try:
         driverID = int(request.data['params'].get('driverID', None))
 
-        driverList = route.objects(Driver_ID=driverID)
-        result = RouteSerializer(driverList)
+        routeList = route.objects(Driver_ID=driverID)
+        result = RouteSerializer(routeList, many=True)
         response = JsonResponse(json.loads(json_util.dumps(result.data)), safe=False)
         response["Access-Control-Allow-Origin"] = "*"
         response["Access-Control-Allow-Methods"] = "POST"
@@ -83,8 +83,8 @@ def getCurrentRouteBaseOnDriverID(request):
         response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
         return response
     except IntegrityError as IE:
-        raise IE
+        print(IE)
     except MultipleObjectsReturned as ME:
-        raise ME
+        print(ME)
     except Exception as e:
-        raise e
+        print(e)
