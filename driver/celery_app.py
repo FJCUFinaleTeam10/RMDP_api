@@ -6,7 +6,7 @@ from celery import Celery
 # Set default Django settings
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'apps.settings')
 
-app = Celery('driver',broker=os.environ.get('DOCKER_CELERY_BROKER_0'))
+app = Celery('driver', broker=os.environ.get('DOCKER_CELERY_BROKER_0'))
 app.conf.beat_schedule = {
     "driverSimulator": {
         "task": "driver.tasks.updateDriver",
