@@ -14,3 +14,4 @@ pymongo==3.12.0
 django-rest-framework-mongoengine==3.4.1
 redis==4.0.2
 python-dotenv==0.19.2
+django-cors-headers
