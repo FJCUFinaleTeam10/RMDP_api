@@ -40,7 +40,7 @@ cityDict = {
     'Country_Code': 1,
     'Latitude': 2,
     'Longitude': 3,
-    'radus':4
+    'radus': 4
 }
 
 driverPandasSchema = Schema({
@@ -115,11 +115,8 @@ def getDriverBaseOnCity(cityId):
                       rawData['Reward'], rawData['Node_ID'], rawData['Node_num'])).T
 
 
-def getHasOrderDriverBaseOnCity(cityId):
-    rawData = driverCollection.aggregate_numpy_all(
-        [{'$match': {"City_id": int(cityId),
-                     "Capacity": {"$gt": 0}
-                     }}], schema=driverPandasSchema)
+def getHasOrderDriverBaseOnCity():
+    rawData = driverCollection.aggregate_numpy_all([{'$match': {"Capacity": {"$gt": 0}}}], schema=driverPandasSchema)
 
     return np.vstack((rawData['Driver_ID'], rawData['Country_Code'],
                       rawData['City_id'], rawData['Longitude'],
@@ -389,3 +386,19 @@ def insertHistory(driver):
         )
     except PyMongoError as py_mongo_error:
         logging.critical(py_mongo_error, exc_info=True)
+
+
+def history_bulk_write(driverList):
+    bulk_op = driverCollection.initialize_unordered_bulk_op()
+
+    for primary_key in driverList:
+        bulk_op.find({'fubar_key': primary_key}) \
+            .update({'$set': {
+            'dopeness_factor': 'unlimited'
+        }
+        }
+        )
+    try:
+        bulk_op.execute()
+    except Exception as e:
+        print(e, e.details)

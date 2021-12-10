@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path
 
-from driver.views import listAll, getDriverBaseOnCity, getDriverBaseOnID
+from driver.views import listAll, getDriverBaseOnCity, getDriverBaseOnID, getDriverIDBaseOnCity
 from geolocation.views import getAllCountryCode, getAllCities, getCountryCode, getCities
 from menu.views import getMenu, getMenuBaseOnRestaurant
 from order.views import createOrder, getOrderBaseOnCity
@@ -17,6 +17,8 @@ urlpatterns = [
     path('driver/getalldriver/', listAll, name='index'),
     path('driver/getdriverbaseoncity/', getDriverBaseOnCity, name='index'),
     path('driver/getdriverbaseonid/', getDriverBaseOnID, name='index'),
+    path('driver/getdriveridbaseoncity/', getDriverIDBaseOnCity, name='index'),
+
 
     path('restaurant/getallrestaurantlist', listAllRestaurantList, name='index'),
     path('restaurant/getrestaurantlist/', listRestaurantList, name='index'),
