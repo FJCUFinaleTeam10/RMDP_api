@@ -12,7 +12,7 @@ from rest_framework.decorators import api_view
 from driver.models import driver
 from routehistory.models import routehistory
 from routehistory.serializers import RouteHistorySerializer
-
+from mongoengine.queryset.visitor import Q
 
 # Create your views here.
 @api_view(['POST'])
@@ -22,6 +22,8 @@ def getHistoryBaseOnDriverID(request):
     toDate = parser.parse(request.data['params'].get('to', None))
     driverList = list(driver.objects(City_id=cityID).values_list('Driver_ID'))
     routehistoryList = routehistory.objects(D_id__in=driverList)
+    result = RouteHistorySerializer(routehistoryList,many=True)
     response = {}
+    response['data']= result.data
     response["Access-Control-Allow-Origin"] = "*"
-    return response
+    return JsonResponse(response)

@@ -10,7 +10,8 @@ from rmdp_env.views import listAllSetting, getSettingBaseOneCity, updateSetting
 from q_learning.views import getQlearningBaseOnCity
 
 from route.views import getCurrentRouteBaseOnDriverID
-
+from routehistory.views import  getHistoryBaseOnDriverID
+from history.views import  getHistoryBaseOnCityList
 urlpatterns = [
     path('admin/', admin.site.urls, name='index'),
 
@@ -44,5 +45,7 @@ urlpatterns = [
     path('qlearning/getqlearningbaseoncity/', getQlearningBaseOnCity),
 
     path('route/getcurrentroute/', getCurrentRouteBaseOnDriverID),
+    path('routehistory/gethistorybaseondriverid/', getHistoryBaseOnDriverID),
 
+    path('history/gethistorybaseoncity/', getHistoryBaseOnCityList),
 ]
