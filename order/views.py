@@ -4,7 +4,9 @@ import logging
 from django.db import IntegrityError
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from mongoengine import MultipleObjectsReturned
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, parser_classes
+from rest_framework.parsers import JSONParser
+
 from order.models import order
 from order.serializers import OrderSerializer
 from mongoengine.base import get_document as get_model
@@ -53,9 +55,10 @@ def getOrder(request):
 
 
 @api_view(['POST'])
+@parser_classes([JSONParser])
 def getOrderBaseOnCity(request):
     try:
-        cityID = request.data['params']['cityId']
+        cityID = request.data['params'].get('cityId', 'Agra')
         skip = request.data['params'].get('skip', 0)
         limit = request.data['params'].get('limit', 100000000)
         restaurant = get_model('restaurant')
@@ -65,7 +68,6 @@ def getOrderBaseOnCity(request):
         result = OrderSerializer(orderList, many=True)
         response = {}
         response["Access-Control-Allow-Origin"] = "*"
-        response["Access-Control-Allow-Methods"] = "POST"
         response["Access-Control-Max-Age"] = "1000"
         response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
         response['count'] = totalValue

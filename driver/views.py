@@ -25,13 +25,33 @@ def listAll(request):
     return response
 
 
+@api_view(['POST', 'OPTIONS'])
+def getDriverBaseOnCity(request,format = None):
+    try:
+        cityID = request.data.get('cityId', 1)
+        skip = request.data.get('skip', 0)
+        limit = request.data.get('limit', 9999999)
+        driverList = driver.objects(City_id=cityID).skip(skip).limit(limit)
+        totalValue = driver.objects(City_id=cityID).count()
+        result = DriverSerializer(driverList, many=True)
+        response = {}
+        response["Access-Control-Allow-Origin"] = "*"
+        response['count'] = totalValue
+        response['data'] = json.loads(json_util.dumps(result.data))
+        return JsonResponse(response)
+    except IntegrityError as IE:
+        print(IE)
+    except MultipleObjectsReturned as ME:
+        print(ME)
+    except Exception as e:
+        print(e)
+
+
 @api_view(['POST'])
-def getDriverBaseOnCity(request):
+def getDriverIDBaseOnCity(request):
     try:
         cityID = request.data['params'].get('cityId', 1)
-        skip = request.data['params'].get('skip', 0)
-        limit = request.data['params'].get('limit', 9999999)
-        driverList = driver.objects(City_id=cityID).skip(skip).limit(limit)
+        driverList = driver.objects(City_id=cityID).only('Driver_ID')
         totalValue = driver.objects(City_id=cityID).count()
         result = DriverSerializer(driverList, many=True)
         response = {}
@@ -48,28 +68,6 @@ def getDriverBaseOnCity(request):
         print(ME)
     except Exception as e:
         print(e)
-
-@api_view(['POST'])
-def getDriverIDBaseOnCity(request):
-        try:
-            cityID = request.data['params'].get('cityId', 1)
-            driverList = driver.objects(City_id=cityID).only('Driver_ID')
-            totalValue = driver.objects(City_id=cityID).count()
-            result = DriverSerializer(driverList, many=True)
-            response = {}
-            response["Access-Control-Allow-Origin"] = "*"
-            response["Access-Control-Allow-Methods"] = "POST"
-            response["Access-Control-Max-Age"] = "1000"
-            response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
-            response['count'] = totalValue
-            response['data'] = json.loads(json_util.dumps(result.data))
-            return JsonResponse(response)
-        except IntegrityError as IE:
-            print(IE)
-        except MultipleObjectsReturned as ME:
-            print(ME)
-        except Exception as e:
-            print(e)
 
 
 @api_view(['POST'])

@@ -23,6 +23,11 @@ def mongoClientUrl(DEBUG):
 connect("RMDP_mongodb", host=mongoClientUrl(DEBUG))
 print('connected to ', mongoClientUrl(DEBUG))
 
+REST_FRAMEWORK = {
+   'DEFAULT_PARSER_CLASSES': [
+      'rest_framework.parsers.JSONParser',
+   ]
+}
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -86,6 +91,14 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 CORS_ALLOWED_ORIGIN_REGEXES = [r"^https://\w+\.example\.com$", ]
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
 ALLOWED_HOSTS = ['*']
 CORS_ALLOW_HEADERS = [
     'accept',
