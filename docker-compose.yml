@@ -19,7 +19,7 @@ services:
     image: 'mongo:latest'
     container_name: mongo-server
     env_file:
-      - dev.env
+      - enviroment.env
     ports:
       - '27017:27017'
     volumes:
@@ -34,7 +34,7 @@ services:
     links:
       - mongodb
     env_file:
-      - dev.env
+      - enviroment.env
     ports:
       - '8081:8081'
     networks:
@@ -61,26 +61,26 @@ services:
     build:
       context: .
       dockerfile: web.Dockerfile
-    command: celery -A driver worker -l info -c 1
+    command: celery -A driver worker -l info  -c 1
     volumes:
       - .:/usr/src/app/
     depends_on:
       - redis
     env_file:
-      - dev.env
+      - enviroment.env
     networks:
       - rmdp_api
   driver_beat:
     build:
       context: .
       dockerfile: web.Dockerfile
-    command: celery -A driver beat -l info
+    command: celery -A driver beat -l info --pidfile=/tmp/celery_driver_beat.pid
     volumes:
       - .:/usr/src/app/
     depends_on:
       - redis
     env_file:
-      - dev.env
+      - enviroment.env
     networks:
       - rmdp_api
   order_worker:
@@ -93,20 +93,20 @@ services:
     depends_on:
       - redis
     env_file:
-      - dev.env
+      - enviroment.env
     networks:
       - rmdp_api
   order_beat:
     build:
       context: .
       dockerfile: web.Dockerfile
-    command: celery -A order beat -l info
+    command: celery -A order beat -l info --pidfile=/tmp/celery_order_beat.pid
     volumes:
       - .:/usr/src/app/
     depends_on:
       - redis
     env_file:
-      - dev.env
+      - enviroment.env
     networks:
       - rmdp_api
   rmdp_worker:
@@ -119,20 +119,20 @@ services:
     depends_on:
       - redis
     env_file:
-      - dev.env
+      - enviroment.env
     networks:
       - rmdp_api
   rmdp_beat:
     build:
       context: .
       dockerfile: web.Dockerfile
-    command: celery -A RMDP_ml beat -l info
+    command: celery -A RMDP_ml beat -l info --pidfile=/tmp/celery_rmdp_beat.pid
     volumes:
       - .:/usr/src/app/
     depends_on:
       - redis
     env_file:
-      - dev.env
+      - enviroment.env
     networks:
       - rmdp_api
   flower:
