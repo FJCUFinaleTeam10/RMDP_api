@@ -18,7 +18,9 @@ updateTime = 1
 def generateThread():
     logging.info("start generating")
     driverList = Mongo_Operator.getHasOrderDriverBaseOnCity()
-    updatedDriverList, updatedOrderList = np.apply_along_axis(updateDriverLocation, axis=1, arr=driverList)
+    #np.apply_along_axis(updateDriverLocation, axis=1, arr=driverList)
+    for driver in driverList:
+        updateDriverLocation(driver)
     print('done')
 
 
@@ -54,8 +56,8 @@ def updateDriverLocation(originDriver):
             else:
                 currentOrder[12] = 3
                 currentOrder[10] = datetime.now()
-            # self.DBclient.updateOrder(targetDestination)
-            # Mongo_Operator.updateOrder(currentOrder)
+            #self.DBclient.updateOrder(targetDestination)
+            Mongo_Operator.updateOrder(currentOrder)
             storageRoute = np.row_stack((storageRoute, driverRoute[0]))
             driverRoute = np.delete(driverRoute, 0, axis=0)
 
@@ -75,10 +77,10 @@ def updateDriverLocation(originDriver):
 
             currentDriver[4] = updatedLat
             currentDriver[3] = updatedLon
-            # Mongo_Operator.updateDriver(currentDriver)
-            # for route in driverRoute:
-            #     Mongo_Operator.updateRoute(route)
-        return currentDriver, currentOrder, driverRoute
+            Mongo_Operator.updateDriver(currentDriver)
+            for route in driverRoute:
+                 Mongo_Operator.updateRoute(route)
+        #return currentDriver, currentOrder, driverRoute
     except Exception as e:
         logging.critical(e, exc_info=True)
 
