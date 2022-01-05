@@ -12,7 +12,7 @@ from pymongoarrow.api import Schema
 from pymongoarrow.monkey import patch_all
 from datetime import datetime
 import time
-
+from logging import log
 patch_all()
 
 
@@ -24,6 +24,9 @@ def getMongoClientUrl(DEBUG):
 
 
 DEBUG = False if int(os.environ['DEBUG']) != 1 else True
+
+
+log("connecting to ", getMongoClientUrl(DEBUG))
 client = MongoClient(getMongoClientUrl(DEBUG))
 databaseName = client["RMDP"]
 

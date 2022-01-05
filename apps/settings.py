@@ -4,12 +4,11 @@ from mongoengine import connect
 import os
 from dotenv import load_dotenv
 import os
+
 load_dotenv()
 # from django-environ import environ
 # base = environ.Path(__file__) - 2  # two folders back (/a/b/ - 2 = /)
 # environ.Env.read_env(env_file=base('.env'))  # reading .env file
-
-from RMDP_ml import tasks
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY")
@@ -17,16 +16,16 @@ DEBUG = False if int(os.environ['DEBUG']) == 1 else True
 
 
 def mongoClientUrl(DEBUG):
-    return os.environ.get('localhostmongoClientUrl') if DEBUG else os.environ.get('localhostmongoClientUrl')
+    return "mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin" if DEBUG else "mongodb://admin:admin@mongodb:27017/RMDP?authSource=admin"
 
 
-connect("RMDP_mongodb", host=mongoClientUrl(DEBUG))
 print('connected to ', mongoClientUrl(DEBUG))
+connect("RMDP_mongodb", host=mongoClientUrl(DEBUG))
 
 REST_FRAMEWORK = {
-   'DEFAULT_PARSER_CLASSES': [
-      'rest_framework.parsers.JSONParser',
-   ]
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+    ]
 }
 INSTALLED_APPS = [
     'django.contrib.admin',
