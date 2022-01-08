@@ -135,11 +135,11 @@ CELERY_RESULT_BACKEND = DEBUG and "redis://localhost:6379" or "redis://redis:637
 CELERY_BEAT_SCHEDULE = {
     "run_RMDP": {
         "task": "RMDP_api.tasks.run_RMDP",
-        "schedule": timedelta(seconds=15),
+        "schedule": timedelta(seconds=2),
     },
     "generatingOrder": {
         "task": "RMDP_api.tasks.generatingOrder",
-        "schedule": timedelta(seconds=15),
+        "schedule": timedelta(seconds=2),
     },
     "driverSimulator": {
         "task": "RMDP_api.tasks.updateDriver",
